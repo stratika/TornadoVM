@@ -276,6 +276,10 @@ public class KMeans {
     }
 
     public KMeans(int numDataPoints, int k) {
+        setInputs(numDataPoints, k);
+    }
+
+    public static void setInputs(int numDataPoints, int k) {
         // Cluster the data points
         // Create Data Set: data points
         dataPoints = createDataPoints(numDataPoints);
@@ -286,7 +290,7 @@ public class KMeans {
         initializeClusters(k);
     }
 
-    public Matrix2DInt runWithJava() {
+    public static Matrix2DInt runWithJava() {
         long start = System.nanoTime();
         assignClusters(dataPoints, clusters, centroid);
 
@@ -306,7 +310,7 @@ public class KMeans {
         return clusters;
     }
 
-    public Matrix2DInt runWithGPU() {
+    public static Matrix2DInt runWithGPU() {
         // 1. Create a TaskGraph for the assign cluster method
         TaskGraph taskGraph = new TaskGraph("clustering/examples") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, clusters, dataPoints) //
