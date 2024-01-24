@@ -20,8 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
@@ -36,8 +34,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.Graph.Mark;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.GraphState;
@@ -60,13 +58,13 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis.TornadoValueTypeReplacement;
+import uk.ac.manchester.tornado.drivers.common.compiler.phases.loops.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLKernelContextAccessNode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 
@@ -177,8 +175,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                         node.usages().filter(ArrayLengthNode.class).forEach(arrayLength -> evaluate(graph, arrayLength, value));
                     }
                     break;
-                case Illegal:
-                case Void:
+                case Illegal, Void:
                 default:
                     break;
             }
@@ -196,8 +193,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     }
 
     private void evaluate(final StructuredGraph graph, final Node node, final Object value) {
-        if (node instanceof ArrayLengthNode) {
-            ArrayLengthNode arrayLength = (ArrayLengthNode) node;
+        if (node instanceof ArrayLengthNode arrayLength) {
             int length = Array.getLength(value);
 
             /**
@@ -220,8 +216,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             }
             arrayLength.clearInputs();
             GraphUtil.removeFixedWithUnusedInputs(arrayLength);
-        } else if (node instanceof LoadFieldNode) {
-            final LoadFieldNode loadField = (LoadFieldNode) node;
+        } else if (node instanceof LoadFieldNode loadField) {
             final ResolvedJavaField field = loadField.field();
             if (field.getType().getJavaKind().isPrimitive()) {
                 ConstantNode constant;
@@ -244,8 +239,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             } else if (!field.isFinal()) {
                 throw new TornadoBailoutRuntimeException("Non-final objects introduced via scope are not supported");
             }
-        } else if (node instanceof IsNullNode) {
-            final IsNullNode isNullNode = (IsNullNode) node;
+        } else if (node instanceof IsNullNode isNullNode) {
             final boolean isNull = (value == null);
             if (isNull) {
                 isNullNode.replaceAtUsages(LogicConstantNode.tautology(graph));
@@ -253,8 +247,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 isNullNode.replaceAtUsages(LogicConstantNode.contradiction(graph));
             }
             isNullNode.safeDelete();
-        } else if (node instanceof PiNode) {
-            PiNode piNode = (PiNode) node;
+        } else if (node instanceof PiNode piNode) {
             piNode.replaceAtUsages(piNode.getOriginalNode());
             piNode.safeDelete();
         }
@@ -262,16 +255,12 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private ConstantNode createConstantFromObject(Object obj) {
         ConstantNode result = null;
-        if (obj instanceof Float) {
-            result = ConstantNode.forFloat((float) obj);
-        } else if (obj instanceof Integer) {
-            result = ConstantNode.forInt((int) obj);
-        } else if (obj instanceof Double) {
-            result = ConstantNode.forDouble((double) obj);
-        } else if (obj instanceof Long) {
-            result = ConstantNode.forLong((long) obj);
-        } else {
-            unimplemented("createConstantFromObject: %s", obj);
+        switch (obj) {
+            case Float objFloat -> result = ConstantNode.forFloat(objFloat);
+            case Integer objInteger -> result = ConstantNode.forInt(objInteger);
+            case Double objDouble -> result = ConstantNode.forDouble(objDouble);
+            case Long objLong -> result = ConstantNode.forLong(objLong);
+            case null, default -> unimplemented("createConstantFromObject: %s", obj);
         }
         return result;
     }
@@ -352,7 +341,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             deadCodeElimination.run(graph);
 
-            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration = " + iterations);
+            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, STR."After TaskSpecialisation iteration = \{iterations}");
 
             hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty() || hasPanamaArraySizeNode(graph)) && (iterations < MAX_ITERATIONS);
             lastNodeCount = graph.getNodeCount();
@@ -360,8 +349,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(range -> {
-            if (range.value() instanceof PhiNode) {
-                PhiNode phiNode = (PhiNode) range.value();
+            if (range.value() instanceof PhiNode phiNode) {
                 NodeIterable<Node> usages = range.usages();
                 for (Node usage : usages) {
                     if (usage instanceof IntegerLessThanNode) {

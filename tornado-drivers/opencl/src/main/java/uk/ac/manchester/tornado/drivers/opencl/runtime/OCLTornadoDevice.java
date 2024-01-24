@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2020, 2023, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,8 +19,6 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
@@ -57,6 +55,7 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
@@ -229,7 +228,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private boolean isOpenCLPreLoadBinary(OCLDeviceContextInterface deviceContext, String deviceInfo) {
         OCLCodeCache installedCode = deviceContext.getCodeCache();
-        return installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null);
+        return (installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null));
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
@@ -542,6 +541,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else if (object instanceof CharArray) {
                 result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
+            } else if (object instanceof HalfFloatArray) {
+                result = new OCLMemorySegmentWrapper(deviceContext, batchSize);
             } else {
                 result = new OCLObjectWrapper(deviceContext, object);
             }
@@ -629,6 +630,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
+        long partialCopySize = state.getPartialCopySize();
         if (state.isAtomicRegionPresent()) {
             int eventID = state.getObjectBuffer().enqueueRead(null, 0, null, false);
             if (object instanceof AtomicInteger) {
@@ -639,7 +641,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             return eventID;
         } else {
             TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
-            return state.getObjectBuffer().read(object, hostOffset, events, events == null);
+            return state.getObjectBuffer().read(object, hostOffset, partialCopySize, events, events == null);
         }
     }
 

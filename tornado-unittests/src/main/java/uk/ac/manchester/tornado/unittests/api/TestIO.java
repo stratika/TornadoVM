@@ -171,7 +171,7 @@ public class TestIO extends TornadoTestBase {
     @Test
     public void testCopyInWithDevice() {
         final int N = 8096;
-        final int ITERATIONS = 10;
+        final int ITERATIONS = 20;
 
         FloatArray arrayA = createAndInitializeArray(N);
         FloatArray arrayB = createAndInitializeArray(N);
@@ -182,10 +182,10 @@ public class TestIO extends TornadoTestBase {
         // Enable profiler
         System.setProperty("tornado.profiler", "True");
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
+        TaskGraph taskGraph = new TaskGraph("foo") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, arrayA) //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, arrayB) //
-                .task("t0", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
+                .task("bar", TestArrays::vectorAddFloat, arrayA, arrayB, arrayC) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, arrayC);
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
@@ -206,8 +206,8 @@ public class TestIO extends TornadoTestBase {
             copyInSumSimpleExecWithDev += executionResult.getProfilerResult().getDeviceWriteTime();
         }
 
-        // Generous assertions with delta of 10%
-        assertEquals(copyInSumSimpleExec, copyInSumSimpleExecWithDev, (float) copyInSumSimpleExec / 10);
+        // Generous assertions with delta of 12%
+        assertEquals(copyInSumSimpleExec, copyInSumSimpleExecWithDev, (float) copyInSumSimpleExec / 12);
 
     }
     // CHECKSTYLE:ON

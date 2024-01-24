@@ -18,7 +18,7 @@ Developers can choose which backends to install and run.
 
 For a quick introduction please read the following [FAQ](https://tornadovm.readthedocs.io/en/latest/).
 
-**Latest Release:** TornadoVM 0.15.2 - 26/07/2023 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
+**Latest Release:** TornadoVM 1.0 - 05/12/2023 : See [CHANGELOG](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html).
 
 ----------------------
 
@@ -138,8 +138,8 @@ The following code-snippet shows the Matrix Multiplication example using the ker
 ```java
 public class Compute {
     private static void mxmKernel(KernelContext context, Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
-        int idx = context.threadIdx;
-        int jdx = context.threadIdy;
+        int idx = context.globalIdx
+        int jdx = context.globalIdy;
         float sum = 0;
         for (int k = 0; k < size; k++) {
             sum += A.get(idx, k) * B.get(k, jdx);
@@ -161,7 +161,7 @@ public class Compute {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, C);     // Transfer data from device to host
 
         // Create an immutable task-graph
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snaphot();
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
 
         // Create an execution plan from an immutable task-graph
         TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
@@ -222,12 +222,12 @@ You can import the TornadoVM API by setting this the following dependency in the
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>0.15.2</version>
+    <version>1.0</version>
 </dependency>
 <dependency>
     <groupId>tornado</groupId>
     <artifactId>tornado-matrices</artifactId>
-    <version>0.15.2</version>
+    <version>1.0</version>
 </dependency>
 </dependencies>
 ```
@@ -319,21 +319,21 @@ Visit our [website](https://tornadovm.org) to meet the [team](https://www.tornad
 
 ## 11. Licenses
 
-To use TornadoVM, you can link the TornadoVM API to your application which is under the CLASSPATH Exception of GPLv2.0.
+To use TornadoVM, you can link the TornadoVM API to your application which is under Apache 2.
 
-Each TornadoVM module is licensed as follows:
+Each Java TornadoVM module is licensed as follows:
 
 |  Module | License  |
 |---|---|
-| Tornado-API       |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception |
-| Tornado-Runtime   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)   |
-| Tornado-Assembly  |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)  |
-| Tornado-Drivers   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)   |
+| Tornado-API       |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) |
+| Tornado-Runtime   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception   |
+| Tornado-Assembly  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
+| Tornado-Drivers   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception   |
 | Tornado-Drivers-OpenCL-Headers |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/KhronosGroup/OpenCL-Headers/blob/master/LICENSE) |
-| Tornado-scripts   |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)   |
-| Tornado-Annotation|  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) |
-| Tornado-Unittests |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
-| Tornado-Benchmarks|  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
-| Tornado-Examples  |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)   |
-| Tornado-Matrices  |  [![License](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
-| JNI Libraries (OpenCL, PTX and LevelZero)  |  [![License](https://img.shields.io/badge/License-MIT%20-orange.svg)](https://mit-license.org/)  |
+| Tornado-scripts   |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)   |
+| Tornado-Annotation|  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2) |
+| Tornado-Unittests |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
+| Tornado-Benchmarks|  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
+| Tornado-Examples  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)   |
+| Tornado-Matrices  |  [![License: Apache 2](https://img.shields.io/badge/License-Apache%202.0-red.svg)](https://github.com/beehive-lab/TornadoVM/blob/master/LICENSE_APACHE2)  |
+||
