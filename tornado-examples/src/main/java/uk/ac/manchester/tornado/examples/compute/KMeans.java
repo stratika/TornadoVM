@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,8 +32,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 
-import static java.lang.StringTemplate.STR;
-
 /**
  * The KMeans implementation is taken from: https://github.com/jjfumero/tornadovm-examples.
  *
@@ -41,13 +39,13 @@ import static java.lang.StringTemplate.STR;
  *
  * <p>
  * <code>
- * tornado -cp target/tornadovm-library-examples-1.0-SNAPSHOT.jar clustering.examples.KMeans <numPoints> <numClusters>
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.KMeans <numPoints> <numClusters>
  * </code>
  * </p>
  *
  * <p>
  * Example: <code>
- * tornado -cp target/tornadovm-library-examples-1.0-SNAPSHOT.jar clustering.examples.KMeans 1048576 3
+ * tornado -m tornado.examples/uk.ac.manchester.tornado.examples.compute.KMeans 1048576 3
  * </code>
  * </p>
  */
@@ -70,11 +68,11 @@ public class KMeans {
      * cluster
      *
      * @param cluster
-     *            Input set of clusters.
+     *     Input set of clusters.
      * @param dataPoints
-     *            Data Set
+     *     Data Set
      * @param centroid
-     *            Current set of centroids
+     *     Current set of centroids
      * @return a new Centroid
      */
     public static Float2 calculateCentroid(VectorInt cluster, VectorFloat2 dataPoints, Float2 centroid) {
@@ -114,7 +112,7 @@ public class KMeans {
      * @param pointA
      * @param pointB
      * @return a float number that represents the distance between the two input
-     *         points.
+     *     points.
      */
     public static float distance(Float2 pointA, Float2 pointB) {
         float dx = pointA.getX() - pointB.getX();
@@ -198,10 +196,10 @@ public class KMeans {
         return centroidsChanged;
     }
 
-    public static int[] getRandomIndex(VectorFloat2 points, int K) {
+    public static int[] getRandomIndex(VectorFloat2 points, final int k) {
         Random r = new Random();
         HashSet<Integer> randomValues = new HashSet<>();
-        for (int i = 0; i < K; i++) {
+        for (int i = 0; i < k; i++) {
             int valX = r.nextInt(points.getLength());
             while (randomValues.contains(valX)) {
                 valX = r.nextInt(points.getLength());
@@ -210,7 +208,7 @@ public class KMeans {
         }
 
         // Flatten the random values in an array
-        int[] rnd = new int[K];
+        int[] rnd = new int[k];
         int i = 0;
         for (Integer val : randomValues) {
             rnd[i++] = val;
@@ -260,18 +258,18 @@ public class KMeans {
         return dataPoints;
     }
 
-    private static void initializeClusters(final int K) {
+    private static void initializeClusters(final int k) {
         // Initialize clusters with random centroids
-        int[] rnd = getRandomIndex(dataPoints, K);
-        for (int clusterIndex = 0; clusterIndex < K; clusterIndex++) {
+        int[] rnd = getRandomIndex(dataPoints, k);
+        for (int clusterIndex = 0; clusterIndex < k; clusterIndex++) {
             Float2 randomCentroid = dataPoints.get(rnd[clusterIndex]);
             centroid.set(clusterIndex, randomCentroid);
         }
     }
 
-    private static Matrix2DInt createMatrixOfKClusters(final int K) {
-        int[][] initMatrix = new int[K][dataPoints.getLength()];
-        for (int clusterIndex = 0; clusterIndex < K; clusterIndex++) {
+    private static Matrix2DInt createMatrixOfKClusters(final int k) {
+        int[][] initMatrix = new int[k][dataPoints.getLength()];
+        for (int clusterIndex = 0; clusterIndex < k; clusterIndex++) {
             Arrays.fill(initMatrix[clusterIndex], INIT_VALUE);
         }
         return new Matrix2DInt(initMatrix);
@@ -354,7 +352,7 @@ public class KMeans {
 
         KMeans kmeans = new KMeans(numDataPoints, k);
         Matrix2DInt javaClusters = kmeans.runWithJava();
-        Matrix2DInt tornadoVMClusters =kmeans.runWithGPU();
+        Matrix2DInt tornadoVMClusters = kmeans.runWithGPU();
 
         if (PRINT_RESULT) {
             printClusters(dataPoints, javaClusters);
@@ -363,7 +361,7 @@ public class KMeans {
 
         if (CHECK_VALID_OUTCOME) {
             boolean valid = checkValidation(javaClusters, tornadoVMClusters);
-            System.out.println(STR."Validation of results: \{(valid) ? "Correct" : "Failure"}");
+            System.out.println("Validation of results: " + ((valid) ? "Correct" : "Failure"));
         }
     }
 }
