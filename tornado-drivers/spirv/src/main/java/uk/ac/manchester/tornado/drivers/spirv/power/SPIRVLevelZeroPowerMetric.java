@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.spirv.power;
 
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroPowerMonitor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZesPowerEnergyCounter;
@@ -35,6 +36,7 @@ import java.util.List;
 
 public class SPIRVLevelZeroPowerMetric implements PowerMetric {
     private final SPIRVDeviceContext deviceContext;
+    private final LevelZeroDevice l0Device;
     private final LevelZeroPowerMonitor levelZeroPowerMonitor;
     private List<ZesPowerEnergyCounter> initialEnergyCounters;
     private List<ZesPowerEnergyCounter> finalEnergyCounters;
@@ -43,6 +45,7 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
         this.deviceContext = deviceContext;
         initializePowerLibrary();
         levelZeroPowerMonitor = new LevelZeroPowerMonitor();
+        l0Device = (LevelZeroDevice) deviceContext.getDevice().getDeviceRuntime();
     }
 
     @Override
@@ -52,7 +55,7 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
 
     @Override
     public void getHandleByIndex(long[] devices) {
-        if (isPowerFunctionsSupportedForDevice(this.deviceContext.getDevice().getDeviceIndex())) {
+        if (isPowerFunctionsSupportedForDevice(l0Device.getDeviceHandlerPtr())) {
             System.out.println("[SPIRV] Level Zero device supports power functions");
         } else {
             System.out.println("[SPIRV] Level Zero device does not support power functions");
@@ -61,8 +64,7 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
 
     @Override
     public void getPowerUsage(long[] devices, long[] powerUsage) {
-        long device = devices[this.deviceContext.getDevice().getDeviceIndex()];
-        if (isPowerFunctionsSupportedForDevice(device)) {
+        if (isPowerFunctionsSupportedForDevice(l0Device.getDeviceHandlerPtr())) {
             powerUsage = new long[1];
             powerUsage[0] = (long) calculateEnergyCounters(initialEnergyCounters, finalEnergyCounters);
         }
@@ -78,7 +80,6 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
     }
 
     private List<ZesPowerEnergyCounter> getEnergyCounters(long device) {
-        //        long sysmanDeviceIndex = device.getDeviceIndex();
         List<ZesPowerEnergyCounter> energyCounters = new ArrayList<>();
         int result = levelZeroPowerMonitor.getEnergyCounters(device, energyCounters);
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
