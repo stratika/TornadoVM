@@ -30,6 +30,4 @@ public interface PowerMetric {
     void getHandleByIndex(long[] device);
 
     void getPowerUsage(long[] device, long[] powerUsage);
-
-    void getPowerUsage(long[] device, double[] powerUsage);
 }

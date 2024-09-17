@@ -42,9 +42,4 @@ public class OCLEmptyPowerMetric implements PowerMetric {
     public void getPowerUsage(long[] device, long[] powerUsage) {
 
     }
-
-    @Override
-    public void getPowerUsage(long[] device, double[] powerUsage) {
-
-    }
 }
