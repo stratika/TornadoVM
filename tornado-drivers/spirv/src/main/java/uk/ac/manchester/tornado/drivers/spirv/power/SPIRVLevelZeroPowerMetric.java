@@ -55,7 +55,7 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
 
     @Override
     public void getHandleByIndex(long[] devices) {
-        if (isPowerFunctionsSupportedForDevice(l0Device.getDeviceHandlerPtr())) {
+        if (isPowerFunctionsSupportedForDevice()) {
             System.out.println("[SPIRV] Level Zero device supports power functions");
         } else {
             System.out.println("[SPIRV] Level Zero device does not support power functions");
@@ -64,24 +64,24 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
 
     @Override
     public void getPowerUsage(long[] devices, long[] powerUsage) {
-        if (isPowerFunctionsSupportedForDevice(l0Device.getDeviceHandlerPtr())) {
+        if (isPowerFunctionsSupportedForDevice()) {
             powerUsage = new long[1];
             powerUsage[0] = (long) calculateEnergyCounters(initialEnergyCounters, finalEnergyCounters);
         }
 
     }
 
-    public void readInitialCounters(long device) {
-        initialEnergyCounters = getEnergyCounters(device);
+    public void readInitialCounters() {
+        initialEnergyCounters = getEnergyCounters();
     }
 
-    public void readFinalCounters(long device) {
-        finalEnergyCounters = getEnergyCounters(device);
+    public void readFinalCounters() {
+        finalEnergyCounters = getEnergyCounters();
     }
 
-    private List<ZesPowerEnergyCounter> getEnergyCounters(long device) {
+    private List<ZesPowerEnergyCounter> getEnergyCounters() {
         List<ZesPowerEnergyCounter> energyCounters = new ArrayList<>();
-        int result = levelZeroPowerMonitor.getEnergyCounters(device, energyCounters);
+        int result = levelZeroPowerMonitor.getEnergyCounters(l0Device.getDeviceHandlerPtr(), energyCounters);
         if (result != ZeResult.ZE_RESULT_SUCCESS) {
             throw new RuntimeException("Failed to get energy counters. Error code: " + result);
         }
@@ -92,8 +92,8 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
         return levelZeroPowerMonitor.calculatePowerUsage_mW(initialEnergyCounters, finalEnergyCounters);
     }
 
-    public boolean isPowerFunctionsSupportedForDevice(long device) {
-        return levelZeroPowerMonitor.getPowerSupportStatusForDevice(device);
+    public boolean isPowerFunctionsSupportedForDevice() {
+        return levelZeroPowerMonitor.getPowerSupportStatusForDevice(l0Device.getDeviceHandlerPtr());
     }
 
 }
