@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.spirv;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +37,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
+import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
 import uk.ac.manchester.tornado.drivers.opencl.OCLEvent;
@@ -43,7 +45,10 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
 import uk.ac.manchester.tornado.drivers.spirv.graal.SPIRVInstalledCode;
 import uk.ac.manchester.tornado.drivers.spirv.graal.compiler.SPIRVCompilationResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZesPowerEnergyCounter;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVMemoryManager;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVLevelZeroPowerMetric;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVOCLEmptyPowerMetric;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVBufferProvider;
 import uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVTornadoDevice;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroTransferTimeStamp;
@@ -70,12 +75,27 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     protected Map<Long, SPIRVEventPool> spirvEventPool;
     private TornadoBufferProvider bufferProvider;
 
+    public PowerMetric getPowerMetric() {
+        return powerMetric;
+    }
+
+    private final PowerMetric powerMetric;
+
     private Set<Long> executionIds;
 
     protected SPIRVDeviceContext(SPIRVDevice device, SPIRVContext context) {
         init(device);
         this.spirvContext = context;
         this.executionIds = Collections.synchronizedSet(new HashSet<>());
+        if (isDeviceContextLevelZero()) {
+            this.powerMetric = new SPIRVLevelZeroPowerMetric(this);
+        } else {
+            this.powerMetric = new SPIRVOCLEmptyPowerMetric();
+        }
+    }
+
+    private boolean isDeviceContextLevelZero() {
+        return this instanceof SPIRVLevelZeroDeviceContext;
     }
 
     private void init(SPIRVDevice device) {
@@ -447,6 +467,14 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
     }
 
     public long getPowerUsage() {
+        if (isDeviceContextLevelZero()) {
+            long[] device = new long[1];
+            long[] powerUsage = new long[1];
+            powerMetric.getHandleByIndex(device);
+            powerMetric.getPowerUsage(device, powerUsage);
+            System.out.println("[SPIRVDeviceContext] getPowerUsage[0]: " + powerUsage[0]);
+            return powerUsage[0];
+        }
         return 0;
     }
 }

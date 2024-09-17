@@ -24,10 +24,12 @@
 package uk.ac.manchester.tornado.drivers.spirv.graal;
 
 import java.util.Arrays;
+import java.util.List;
 
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroCommandQueue;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVLevelZeroModule;
@@ -39,8 +41,10 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeEventHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeGroupDispatch;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeKernelHandle;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
+import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZesPowerEnergyCounter;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.utils.LevelZeroUtils;
 import uk.ac.manchester.tornado.drivers.spirv.mm.SPIRVKernelStackFrame;
+import uk.ac.manchester.tornado.drivers.spirv.power.SPIRVLevelZeroPowerMetric;
 import uk.ac.manchester.tornado.drivers.spirv.timestamps.LevelZeroKernelTimeStamp;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -215,6 +219,8 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         SPIRVLevelZeroModule module = (SPIRVLevelZeroModule) spirvModule;
         LevelZeroKernel levelZeroKernel = module.getKernel();
         ZeKernelHandle kernel = levelZeroKernel.getKernelHandle();
+        List<ZesPowerEnergyCounter> initialCounters;
+        List<ZesPowerEnergyCounter> finalCounters;
 
         setKernelArgs(executionPlanId, (SPIRVKernelStackFrame) callWrapper);
 
@@ -244,11 +250,26 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
         if (meta.isThreadInfoEnabled()) {
             meta.printThreadDims();
         }
-
+        //        if (deviceContext.getPowerMetric() instanceof SPIRVLevelZeroPowerMetric) {
+        long device = this.deviceContext.getDevice().getDeviceIndex();
+        if (((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).isPowerFunctionsSupportedForDevice(device)) {
+            ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readInitialCounters(device);
+        }
+        //        }
         launchKernelWithLevelZero(executionPlanId, kernel, deviceThreadScheduling, threadBlockDispatcher);
 
         if (TornadoOptions.isProfilerEnabled()) {
-            kernelTimeStamp.solveEvent(executionPlanId, meta);
+            if (kernelTimeStamp != null) {
+                //                if (deviceContext.getPowerMetric() instanceof SPIRVLevelZeroPowerMetric) {
+                //                    long device = this.deviceContext.getDevice().getDeviceIndex();
+                if (((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).isPowerFunctionsSupportedForDevice(device)) {
+                    ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readFinalCounters(device);
+                    System.out.println("[LevelZeroKernelTimeStamp] solveEvent] calling getPowerUsage");
+                }
+                meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
+                //                }
+                kernelTimeStamp.solveEvent(executionPlanId, meta);
+            }
         }
 
         return 0;

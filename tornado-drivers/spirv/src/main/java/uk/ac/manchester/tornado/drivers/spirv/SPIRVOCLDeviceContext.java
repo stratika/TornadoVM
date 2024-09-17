@@ -27,5 +27,6 @@ public class SPIRVOCLDeviceContext extends SPIRVDeviceContext {
 
     public SPIRVOCLDeviceContext(SPIRVDevice device, SPIRVContext context) {
         super(device, context);
+        System.out.println("[SPIRVOCLDeviceContext] creating SPIRVOCLDeviceContext");
     }
 }

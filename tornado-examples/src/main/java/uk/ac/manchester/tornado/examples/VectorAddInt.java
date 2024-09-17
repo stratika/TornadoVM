@@ -19,10 +19,13 @@ package uk.ac.manchester.tornado.examples;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /**
@@ -62,7 +65,7 @@ public class VectorAddInt {
 
         boolean wrongResult;
         String profileLog = null;
-        for (int idx = 0; idx < 10; idx++) {
+        for (int idx = 0; idx < 1; idx++) {
             // Parallel
             TornadoExecutionResult executionResult = tornadoExecutor.execute();
             // Sequential
