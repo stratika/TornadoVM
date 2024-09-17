@@ -63,10 +63,22 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
     }
 
     @Override
-    public void getPowerUsage(long[] devices, long[] powerUsage) {
+    public void getPowerUsage(long[] device, long[] powerUsage) {
+
+    }
+
+    @Override
+    public void getPowerUsage(long[] devices, double[] powerUsage) {
         if (isPowerFunctionsSupportedForDevice()) {
-            powerUsage = new long[1];
-            powerUsage[0] = (long) calculateEnergyCounters(initialEnergyCounters, finalEnergyCounters);
+            powerUsage = new double[1];
+            System.out.println("[SPIRV] Level Zero calculateEnergyCounters= initial: " + initialEnergyCounters.getFirst().getEnergy() + " - final: " + finalEnergyCounters.getFirst().getEnergy());
+            double result = calculateEnergyCounters(initialEnergyCounters, finalEnergyCounters);
+            System.out.println("Power usage result: " + result);
+            double d = 94728.62453531599;
+            System.out.println(d);  // Check the value before casting
+            long value = (long) d;
+            System.out.println(value);  // Should print 94728
+            powerUsage[0] = (long) result;
         }
 
     }

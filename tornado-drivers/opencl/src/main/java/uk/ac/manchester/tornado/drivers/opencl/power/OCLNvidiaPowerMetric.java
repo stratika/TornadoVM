@@ -71,4 +71,9 @@ public class OCLNvidiaPowerMetric implements PowerMetric {
             logger.error(e.getMessage());
         }
     }
+
+    @Override
+    public void getPowerUsage(long[] device, double[] powerUsage) {
+
+    }
 }

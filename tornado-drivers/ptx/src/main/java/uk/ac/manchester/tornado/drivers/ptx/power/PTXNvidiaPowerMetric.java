@@ -70,4 +70,9 @@ public class PTXNvidiaPowerMetric implements PowerMetric {
             logger.error(e.getMessage());
         }
     }
+
+    @Override
+    public void getPowerUsage(long[] device, double[] powerUsage) {
+
+    }
 }

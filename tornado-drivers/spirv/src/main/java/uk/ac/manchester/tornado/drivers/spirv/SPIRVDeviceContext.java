@@ -466,12 +466,12 @@ public abstract class SPIRVDeviceContext implements TornadoDeviceContext {
         return executionIds;
     }
 
-    public long getPowerUsage() {
+    public double getPowerUsage() {
         if (isDeviceContextLevelZero()) {
             long[] device = new long[1];
-            long[] powerUsage = new long[1];
+            double[] powerUsage = new double[1];
             powerMetric.getHandleByIndex(device);
-            //            powerMetric.getPowerUsage(device, powerUsage);
+            powerMetric.getPowerUsage(device, powerUsage);
             System.out.println("[SPIRVDeviceContext] getPowerUsage[0]: " + powerUsage[0]);
             return powerUsage[0];
         }
