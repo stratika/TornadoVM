@@ -176,7 +176,7 @@ public class SPIRVOCLInstalledCode extends SPIRVInstalledCode {
             dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
             meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
             // TODO: Add Power User Metric
-            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
+            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), (long) deviceContext.getPowerUsage());
         }
     }
 
