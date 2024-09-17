@@ -266,7 +266,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
                     ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readFinalCounters();
                     //    System.out.println("[LevelZeroKernelTimeStamp] solveEvent] calling getPowerUsage");
                 }
-                meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), (long) deviceContext.getPowerUsage());
+                meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
                 //                }
                 kernelTimeStamp.solveEvent(executionPlanId, meta);
             }

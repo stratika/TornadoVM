@@ -79,7 +79,7 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
             System.out.println(d);  // Check the value before casting
             long value = (long) d;
             System.out.println(value);  // Should print 94728
-            powerUsage[0] = (long) result;
+            powerUsage[0] = result;
         }
 
     }
