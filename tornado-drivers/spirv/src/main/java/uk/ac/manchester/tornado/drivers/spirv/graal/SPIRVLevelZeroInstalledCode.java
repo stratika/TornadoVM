@@ -241,7 +241,7 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
                 // If the device was updated for the same ExecutionPlan and same TornadoVM instance,
                 // then, we disable the reset of the threads for the next execution.
                 // This will enable the thread-blocks not to be re-computed over and over again, but
-                // only when the device is changed. 
+                // only when the device is changed.
                 meta.disableResetThreadBlock();
                 meta.setLocalWorkToNotDefined();
             }
