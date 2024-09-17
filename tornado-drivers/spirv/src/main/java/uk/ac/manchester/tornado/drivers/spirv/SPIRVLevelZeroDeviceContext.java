@@ -27,7 +27,6 @@ public class SPIRVLevelZeroDeviceContext extends SPIRVDeviceContext {
 
     public SPIRVLevelZeroDeviceContext(SPIRVDevice device, SPIRVContext context) {
         super(device, context);
-        System.out.println("[SPIRVLevelZeroDeviceContext] creating SPIRVLevelZeroDeviceContext");
         this.spirvContext = context;
     }
 

@@ -36,11 +36,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.drivers.common.CommandQueue;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue;
-import uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueueTable;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLEventPool;
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCLBlocking;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 
@@ -56,7 +54,6 @@ public class SPIRVOCLContext extends SPIRVContext {
     public SPIRVOCLContext(SPIRVPlatform platform, List<SPIRVDevice> devices, OCLContextInterface context) {
         super(platform, devices);
         this.oclContext = context;
-        System.out.println("[SPIRVOCLContext] creating SPIRVOCLContext");
         commmandQueueTable = new ConcurrentHashMap<>();
         oclEventPool = new ConcurrentHashMap<>();
         executionIDs = Collections.synchronizedSet(new HashSet<>());

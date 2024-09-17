@@ -29,7 +29,6 @@ import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroDevice;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroPowerMonitor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZesPowerEnergyCounter;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import java.util.ArrayList;
 import java.util.List;
