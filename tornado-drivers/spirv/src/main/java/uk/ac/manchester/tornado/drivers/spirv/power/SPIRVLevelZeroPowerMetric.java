@@ -73,7 +73,8 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
             powerUsage = new double[1];
             System.out.println("[SPIRV] Level Zero calculateEnergyCounters= initial: " + initialEnergyCounters.getFirst().getEnergy() + " - final: " + finalEnergyCounters.getFirst().getEnergy());
             double result = calculateEnergyCounters(initialEnergyCounters, finalEnergyCounters);
-            System.out.println("Power usage result: " + result);
+            System.out.println("Power usage result (double): " + result);
+            System.out.println("Power usage result (long): " + (long) result);
             double d = 94728.62453531599;
             System.out.println(d);  // Check the value before casting
             long value = (long) d;
