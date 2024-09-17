@@ -24,8 +24,6 @@
 package uk.ac.manchester.tornado.drivers.spirv.power;
 
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
-import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
-import uk.ac.manchester.tornado.drivers.spirv.SPIRVDevice;
 import uk.ac.manchester.tornado.drivers.spirv.SPIRVDeviceContext;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.LevelZeroPowerMonitor;
 import uk.ac.manchester.tornado.drivers.spirv.levelzero.ZeResult;
@@ -37,14 +35,12 @@ import java.util.List;
 
 public class SPIRVLevelZeroPowerMetric implements PowerMetric {
     private final SPIRVDeviceContext deviceContext;
-    private final TornadoLogger logger;
     private final LevelZeroPowerMonitor levelZeroPowerMonitor;
     private List<ZesPowerEnergyCounter> initialEnergyCounters;
     private List<ZesPowerEnergyCounter> finalEnergyCounters;
 
     public SPIRVLevelZeroPowerMetric(SPIRVDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
-        this.logger = new TornadoLogger(this.getClass());
         initializePowerLibrary();
         levelZeroPowerMonitor = new LevelZeroPowerMonitor();
     }
@@ -56,7 +52,7 @@ public class SPIRVLevelZeroPowerMetric implements PowerMetric {
 
     @Override
     public void getHandleByIndex(long[] devices) {
-        if (levelZeroPowerMonitor.getPowerSupportStatusForDevice(devices[this.deviceContext.getDevice().getDeviceIndex()])) {
+        if (isPowerFunctionsSupportedForDevice(this.deviceContext.getDevice().getDeviceIndex())) {
             System.out.println("[SPIRV] Level Zero device supports power functions");
         } else {
             System.out.println("[SPIRV] Level Zero device does not support power functions");

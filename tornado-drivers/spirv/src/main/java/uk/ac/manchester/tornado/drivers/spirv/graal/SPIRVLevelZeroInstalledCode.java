@@ -251,10 +251,10 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             meta.printThreadDims();
         }
         //        if (deviceContext.getPowerMetric() instanceof SPIRVLevelZeroPowerMetric) {
-        long device = this.deviceContext.getDevice().getDeviceIndex();
-        if (((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).isPowerFunctionsSupportedForDevice(device)) {
-            ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readInitialCounters(device);
-        }
+        //long device = this.deviceContext.getDevice().getDeviceIndex();
+        //if (((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).isPowerFunctionsSupportedForDevice(device)) {
+        //    ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readInitialCounters(device);
+        //}
         //        }
         launchKernelWithLevelZero(executionPlanId, kernel, deviceThreadScheduling, threadBlockDispatcher);
 
@@ -262,10 +262,10 @@ public class SPIRVLevelZeroInstalledCode extends SPIRVInstalledCode {
             if (kernelTimeStamp != null) {
                 //                if (deviceContext.getPowerMetric() instanceof SPIRVLevelZeroPowerMetric) {
                 //                    long device = this.deviceContext.getDevice().getDeviceIndex();
-                if (((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).isPowerFunctionsSupportedForDevice(device)) {
-                    ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readFinalCounters(device);
-                    System.out.println("[LevelZeroKernelTimeStamp] solveEvent] calling getPowerUsage");
-                }
+                //if (((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).isPowerFunctionsSupportedForDevice(device)) {
+                //    ((SPIRVLevelZeroPowerMetric) deviceContext.getPowerMetric()).readFinalCounters(device);
+                //    System.out.println("[LevelZeroKernelTimeStamp] solveEvent] calling getPowerUsage");
+                //}
                 meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
                 //                }
                 kernelTimeStamp.solveEvent(executionPlanId, meta);
