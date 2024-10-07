@@ -21,6 +21,8 @@ import argparse
 import os
 import subprocess
 import sys
+import time
+from datetime import datetime, timezone
 
 try:
     __JAVA_HOME__ = os.environ["JAVA_HOME"]
@@ -94,7 +96,6 @@ __BENCHMARKS__ = [
     "juliaset",
 ]
 
-
 ## ========================================================================================
 ## Dimensions
 ## ========================================================================================
@@ -116,6 +117,8 @@ __DIMENSIONS__ = {
     "dft": "1",
     "juliaset": "2"
 }
+
+
 ## ========================================================================================
 
 
@@ -224,6 +227,7 @@ def runBenchmarksFullCoverage(args):
     jvm_options, tornado_options = composeAllOptions(args)
     for key in allSizes.keys():
         for size in allSizes[key][0]:
+            printCurrentTime(key + "-" + str(size))
             command = (
                     __TORNADO_COMMAND__
                     + tornado_options
@@ -243,6 +247,13 @@ def runBenchmarksFullCoverage(args):
             command += '"'
             print(command)
             os.system(command)
+            time.sleep(60)
+
+
+def printCurrentTime(label):
+    current_time = datetime.now(timezone.utc)
+    # Print the current time
+    print(f"Current Time for {label}: {current_time.isoformat()}")
 
 
 def runMediumConfiguration(args):
@@ -251,6 +262,7 @@ def runMediumConfiguration(args):
     for key in mediumSizes.keys():
         for size in mediumSizes[key][0]:
             numIterations = eval(mediumSizes[key][1][0])
+            printCurrentTime(key + "-" + str(size))
             command = (
                     __TORNADO_COMMAND__
                     + tornado_options
@@ -270,6 +282,7 @@ def runMediumConfiguration(args):
             command += '"'
             print(command)
             os.system(command)
+            time.sleep(60)
 
 
 def runWithJMH(args):
@@ -288,6 +301,7 @@ def runDefaultSizePerBenchmark(args):
     print(Colors.CYAN + "[INFO] TornadoVM options: " + tornado_options +
           jvm_options + Colors.RESET)
     for b in __BENCHMARKS__:
+        printCurrentTime(key + "-" + str(size))
         command = (
                 __TORNADO_COMMAND__
                 + tornado_options
@@ -301,6 +315,7 @@ def runDefaultSizePerBenchmark(args):
         )
         print(command)
         os.system(command)
+        time.sleep(60)
 
 
 def parseArguments():
@@ -404,7 +419,7 @@ def parseArguments():
         default=False,
         help="Print dimensions and sizes for all benchmarks",
     )
-    
+
     args = parser.parse_args()
     return args
 
@@ -414,6 +429,7 @@ def printProperties():
         dims = __DIMENSIONS__.get(benchmark, "-1")  # get dimension, -1 by default
         for size in sizes[0]:
             print(f"{benchmark}, dims={dims}, size={size}")
+
 
 def main():
     args = parseArguments()
