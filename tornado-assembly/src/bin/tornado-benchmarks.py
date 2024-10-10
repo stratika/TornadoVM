@@ -22,7 +22,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 try:
     __JAVA_HOME__ = os.environ["JAVA_HOME"]
@@ -250,19 +250,62 @@ def runBenchmarksFullCoverage(args):
             time.sleep(60)
 
 
-def printCurrentTime(label):
+def sync_to_ups_interval(start_time):
+    # Get the current time
+    current_time = datetime.now()
+    
+    # Find the next time that matches the UPS interval
+    # Ensure that the next sync time is in the future
+    while current_time < start_time:
+        # Sleep a short time before checking again
+        time.sleep(0.5)
+        current_time = datetime.now()
+    
+    # Calculate the difference between the start time and now, in seconds
+    time_difference = (current_time - start_time).total_seconds()
+    
+    # Calculate the number of seconds since the last 10-second interval
+    seconds_since_last_interval = time_difference % 10
+    
+    # Calculate how many seconds to wait until the next 10-second mark
+    wait_time = (10 - seconds_since_last_interval) % 10
+   
+    # Calculate the valid start time
+    valid_start_time = datetime.now(timezone.utc) + timedelta(seconds=wait_time)
+
+    # Sleep until the next desired time
+    time.sleep(wait_time)
+
+    # Return the valid start time
+    return valid_start_time
+
+def get_ups_start_time():
+    #ups_start_time = datetime.strptime("14:57:07", "%H:%M:%S").replace(
+    ups_start_time = datetime.strptime("14:57:00", "%H:%M:%S").replace(
+        year=datetime.now().year, 
+        month=datetime.now().month, 
+        day=datetime.now().day
+    )
+    return ups_start_time
+    
+def printCurrentTime():
     current_time = datetime.now(timezone.utc)
     # Print the current time
-    print(f"Current Time for {label}: {current_time.isoformat()}")
+    print(f"Starting Time for all benchmarks: {current_time.isoformat()}")
 
+def printStartTime(label, start_time):
+    print(f"Start Time for {label}: {start_time.isoformat()}")
 
 def runMediumConfiguration(args):
     jvm_options, tornado_options = composeAllOptions(args)
     print(tornado_options, jvm_options)
+    printCurrentTime()
     for key in mediumSizes.keys():
         for size in mediumSizes[key][0]:
             numIterations = eval(mediumSizes[key][1][0])
-            printCurrentTime(key + "-" + str(size))
+            # Sync the script with the UPS intervals
+            ups_start_time = get_ups_start_time()
+            start_time = sync_to_ups_interval(ups_start_time)
             command = (
                     __TORNADO_COMMAND__
                     + tornado_options
@@ -282,6 +325,7 @@ def runMediumConfiguration(args):
             command += '"'
             print(command)
             os.system(command)
+            printStartTime(key + "-" + str(size), start_time)
             time.sleep(60)
 
 
@@ -300,8 +344,11 @@ def runDefaultSizePerBenchmark(args):
     jvm_options, tornado_options = composeAllOptions(args)
     print(Colors.CYAN + "[INFO] TornadoVM options: " + tornado_options +
           jvm_options + Colors.RESET)
+    printCurrentTime()
     for b in __BENCHMARKS__:
-        printCurrentTime(key + "-" + str(size))
+        # Sync the script with the UPS intervals
+        ups_start_time = get_ups_start_time()
+        start_time = sync_to_ups_interval(ups_start_time)
         command = (
                 __TORNADO_COMMAND__
                 + tornado_options
@@ -315,6 +362,7 @@ def runDefaultSizePerBenchmark(args):
         )
         print(command)
         os.system(command)
+        printStartTime(key + "-" + str(size), start_time)
         time.sleep(60)
 
 
