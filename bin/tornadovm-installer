@@ -26,6 +26,7 @@ import zipfile
 
 import install_python_modules as tornadoReq
 import config_utils as cutils
+import idea_xml_utils as ideaUtils
 
 tornadoReq.check_python_dependencies()
 
@@ -165,7 +166,6 @@ class TornadoInstaller:
 
         ## Update env-variables
         self.env["PATH"].append(os.path.join(mavenTLD, "bin"))
-
 
     def getTLDName(self, ar):
         if os.name == 'nt':
@@ -358,6 +358,8 @@ class TornadoInstaller:
             self.env["JAVA_HOME"] = args.javaHome
 
         self.setEnvironmentVariables()
+        if args.ideinit:
+            ideaUtils.tornadovm_ide_init(os.environ['TORNADO_SDK'], self.env["JAVA_HOME"], backend)
         self.compileTornadoVM(makeJDK, backend, polyglotOption)
         self.createSourceFile()
 
@@ -433,6 +435,13 @@ def parseArguments():
         dest="polyglot",
         default=None,
         help="To enable interoperability with Truffle Programming Languages.",
+    )
+    parser.add_argument(
+        "--ideinit",
+        action="store_true",
+        dest="ideinit",
+        default=None,
+        help="To generate internal xml files for the IntelliJ IDE.",
     )
     args = parser.parse_args()
 
