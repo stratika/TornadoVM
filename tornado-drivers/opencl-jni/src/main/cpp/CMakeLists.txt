@@ -3,6 +3,7 @@ project (Tornado)
 
 if(MSVC)
 	set(CMAKE_PREFIX_PATH "$ENV{CommonProgramFiles\(x86\)}/Intel/Shared Libraries")
+	set(OpenCL_INCLUDE_DIR "C:/Program Files (x86)/Intel/oneAPI/compiler/latest/include/sycl/CL")
 	find_package(OpenCL REQUIRED)
 	find_package(CUDA)
 endif()
