@@ -46,5 +46,12 @@ tests:
 	python %TORNADO_SDK%\bin\tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	%TORNADO_SDK%\bin\test-native.cmd
 
+fast-tests:
+	del /f tornado_unittests.log
+	python %TORNADO_SDK%\bin\tornado --devices
+	python %TORNADO_SDK%\bin\tornado-test --ea --verbose --quickPass
+	python %TORNADO_SDK%\bin\tornado-test --ea -V -J"-Dtornado.device.memory=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
+	%TORNADO_SDK%\bin\test-native.cmd
+
 test-slam:
 	python %TORNADO_SDK%\bin\tornado-test -V --fast uk.ac.manchester.tornado.unittests.slam.GraphicsTests
