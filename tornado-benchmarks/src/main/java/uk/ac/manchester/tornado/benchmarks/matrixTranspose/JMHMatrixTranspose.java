@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
  * How to run in isolation?
  * </p>
  * <code>
- * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.matrixVectorMultiplication.JMHMatrixTranspose
+ * tornado -jar tornado-benchmarks/target/jmhbenchmarks.jar uk.ac.manchester.tornado.benchmarks.matrixTranspose.JMHMatrixTranspose
  * </code>
  */
 public class JMHMatrixTranspose {
