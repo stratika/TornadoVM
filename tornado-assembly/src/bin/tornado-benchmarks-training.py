@@ -94,6 +94,7 @@ __BENCHMARKS__ = [
     "dgemm",
     "matrixvectormultiplication",
     "matrixtranspose",
+    "matrixaddition",
     "hilbert",
     "mandelbrot",
     "dft",
@@ -119,7 +120,10 @@ __DIMENSIONS__ = {
     "dgemm": "2",
     "matrixvectormultiplication": "2",
     "matrixtranspose": "2",
+    "matrixaddition": "2",
     "hilbert": "2",
+    "dotvector": "2",
+    "dotimage": "2",
     "mandelbrot": "2",
     "dft": "1",
     "juliaset": "2"
@@ -233,7 +237,20 @@ allSizes = {
     "dgemm": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
     "matrixvectormultiplication": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
     "matrixtranspose": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
+    "matrixaddition": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
     "hilbert": [[16, 32, 64, 128, 256, 512, 1024, 2048], ["getSize()"]],
+    "dotvector": [
+        [
+            1048576,
+            2097152,
+            4194304,
+            8388608,
+            16777216,
+            33554432
+        ],
+        ["getSize()"],
+    ],
+    "dotimage": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
     "mandelbrot": [[64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536], ["getSize()"]],
     "dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536], ["getSize()"]],
     "juliaset": [[512, 1024, 2048, 4096, 8192], ["getSize()"]],
@@ -309,7 +326,17 @@ mediumSizes = {
     "dgemm": [[64, 128, 256, 512], ["getSize()"]],
     "matrixvectormultiplication": [[64, 128, 256, 512], ["getSize()"]],
     "matrixtranspose": [[64, 128, 256, 512], ["getSize()"]],
+    "matrixaddition": [[64, 128, 256, 512], ["getSize()"]],
     "hilbert": [[16, 32, 64, 128, 256], ["getSize()"]],
+    "dotvector": [
+        [
+            1048576,
+            2097152,
+            4194304
+        ],
+        ["getSize()"],
+    ],
+    "dotimage": [[256, 512, 1024, 2048], ["getSize()"]],
     "mandelbrot": [[64, 128, 256, 512, 1024], ["getSize()"]],
     "dft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
     "juliaset": [[512, 1024, 2048, 4096], ["getSize()"]],

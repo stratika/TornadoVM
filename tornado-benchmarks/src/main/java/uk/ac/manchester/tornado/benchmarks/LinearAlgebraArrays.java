@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2023, 2025, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,8 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 public class LinearAlgebraArrays {
     // CHECKSTYLE:OFF
@@ -81,6 +83,14 @@ public class LinearAlgebraArrays {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 B.set((i * size) + j, A.get((j * size) + i));
+            }
+        }
+    }
+
+    public static void matrixAddition(Matrix2DFloat4 A, Matrix2DFloat4 B, Matrix2DFloat4 C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                C.set(i, j, Float4.add(A.get(i, j), B.get(j, j)));
             }
         }
     }

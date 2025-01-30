@@ -262,7 +262,7 @@ public abstract class BenchmarkRunner {
             case "dft" -> new uk.ac.manchester.tornado.benchmarks.dft.Benchmark();
             case "dgemm" -> new uk.ac.manchester.tornado.benchmarks.dgemm.Benchmark();
             case "dotimage" -> new uk.ac.manchester.tornado.benchmarks.dotimage.Benchmark();
-            case "dorvector" -> new uk.ac.manchester.tornado.benchmarks.dotvector.Benchmark();
+            case "dotvector" -> new uk.ac.manchester.tornado.benchmarks.dotvector.Benchmark();
             case "euler" -> new uk.ac.manchester.tornado.benchmarks.euler.Benchmark();
             case "hilbert" -> new uk.ac.manchester.tornado.benchmarks.hilbert.Benchmark();
             case "juliaset" -> new uk.ac.manchester.tornado.benchmarks.juliaset.Benchmark();
@@ -276,6 +276,7 @@ public abstract class BenchmarkRunner {
             case "sgemm" -> new uk.ac.manchester.tornado.benchmarks.sgemm.Benchmark();
             case "matrixvectormultiplication" -> new uk.ac.manchester.tornado.benchmarks.matrixVectorMultiplication.Benchmark();
             case "matrixtranspose" -> new uk.ac.manchester.tornado.benchmarks.matrixTranspose.Benchmark();
+            case "matrixaddition" -> new uk.ac.manchester.tornado.benchmarks.matrixAddition.Benchmark();
             case "spmv" -> new uk.ac.manchester.tornado.benchmarks.spmv.Benchmark();
             case "stencil" -> new uk.ac.manchester.tornado.benchmarks.stencil.Benchmark();
             default -> throw new TornadoRuntimeException("Benchmark not recognized: " + benchmark);
