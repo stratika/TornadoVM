@@ -67,6 +67,24 @@ public class LinearAlgebraArrays {
 
     }
 
+    public static void matrixVectorMultiplication(final FloatArray A, final FloatArray B, final FloatArray C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            float sum = 0.0f;
+            for (int j = 0; j < size; j++) {
+                sum += A.get((i * size) + j) * B.get(j);
+            }
+            C.set(i, sum);
+        }
+    }
+
+    public static void matrixTranspose(final FloatArray A, FloatArray B, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                B.set((i * size) + j, A.get((j * size) + i));
+            }
+        }
+    }
+
     public static void spmv(final FloatArray val, final IntArray cols, final IntArray rowDelimiters, final FloatArray vec, final int dim, final FloatArray out) {
         for (@Parallel int i = 0; i < dim; i++) {
             float t = 0.0f;

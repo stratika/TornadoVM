@@ -274,6 +274,8 @@ public abstract class BenchmarkRunner {
             case "rotatevector" -> new uk.ac.manchester.tornado.benchmarks.rotatevector.Benchmark();
             case "saxpy" -> new uk.ac.manchester.tornado.benchmarks.saxpy.Benchmark();
             case "sgemm" -> new uk.ac.manchester.tornado.benchmarks.sgemm.Benchmark();
+            case "matrixvectormultiplication" -> new uk.ac.manchester.tornado.benchmarks.matrixVectorMultiplication.Benchmark();
+            case "matrixtranspose" -> new uk.ac.manchester.tornado.benchmarks.matrixTranspose.Benchmark();
             case "spmv" -> new uk.ac.manchester.tornado.benchmarks.spmv.Benchmark();
             case "stencil" -> new uk.ac.manchester.tornado.benchmarks.stencil.Benchmark();
             default -> throw new TornadoRuntimeException("Benchmark not recognized: " + benchmark);
