@@ -24,9 +24,11 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.collections.VectorFloat4;
 import uk.ac.manchester.tornado.api.types.images.ImageByte3;
 import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 public class ComputeKernels {
     // CHECKSTYLE:OFF
@@ -340,6 +342,12 @@ public class ComputeKernels {
     public static void vectorAdd(FloatArray a, FloatArray b, FloatArray c) {
         for (@Parallel int i = 0; i < c.getSize(); i++) {
             c.set(i, a.get(i) + b.get(i));
+        }
+    }
+
+    public static void vectorAdd(VectorFloat4 a, VectorFloat4 b, VectorFloat4 results) {
+        for (@Parallel int i = 0; i < a.getLength(); i++) {
+            results.set(i, Float4.add(a.get(i), b.get(i)));
         }
     }
     // CHECKSTYLE:ON
