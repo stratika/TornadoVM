@@ -279,6 +279,7 @@ public abstract class BenchmarkRunner {
             case "matrixaddition" -> new uk.ac.manchester.tornado.benchmarks.matrixAddition.Benchmark();
             case "spmv" -> new uk.ac.manchester.tornado.benchmarks.spmv.Benchmark();
             case "stencil" -> new uk.ac.manchester.tornado.benchmarks.stencil.Benchmark();
+            case "vectoraddition" -> new uk.ac.manchester.tornado.benchmarks.vectorAddition.Benchmark();
             default -> throw new TornadoRuntimeException("Benchmark not recognized: " + benchmark);
         };
     }

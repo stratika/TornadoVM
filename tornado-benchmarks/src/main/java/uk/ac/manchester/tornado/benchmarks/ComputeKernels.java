@@ -336,5 +336,11 @@ public class ComputeKernels {
             }
         }
     }
+
+    public static void vectorAdd(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
+        }
+    }
     // CHECKSTYLE:ON
 }
