@@ -101,6 +101,8 @@ __BENCHMARKS__ = [
     "juliaset",
     "vectoraddition",
     "vectoradditionfloat4",
+    "rotateimage",
+    "rotatevector",
 ]
 
 ## ========================================================================================
@@ -130,7 +132,9 @@ __DIMENSIONS__ = {
     "dft": "1",
     "juliaset": "2",
     "vectoraddition": "1",
-    "vectoradditionfloat4": "1"
+    "vectoradditionfloat4": "1",
+    "rotateimage": "2",
+    "rotatevector": "1"
 }
 
 
@@ -290,6 +294,18 @@ allSizes = {
         ],
         ["getSize()"],
     ],
+    "rotateimage": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
+    "rotatevector": [
+        [
+            1048576,
+            2097152,
+            4194304,
+            8388608,
+            16777216,
+            33554432
+        ],
+        ["getSize()"]
+    ],
 }
 
 mediumSizes = {
@@ -395,6 +411,15 @@ mediumSizes = {
             1048576
         ],
         ["getSize()"],
+    ],
+    "rotateimage": [[256, 512, 1024, 2048], ["getSize()"]],
+    "rotatevector": [
+        [
+            1048576,
+            2097152,
+            4194304
+        ],
+        ["getSize()"]
     ],
 }
 
