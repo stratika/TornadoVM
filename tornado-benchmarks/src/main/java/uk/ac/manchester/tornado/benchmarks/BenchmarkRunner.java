@@ -284,6 +284,7 @@ public abstract class BenchmarkRunner {
             case "blackandwhitefilter" -> new uk.ac.manchester.tornado.benchmarks.blackAndWhiteFilter.Benchmark();
             case "matrixmultiplication1d" -> new uk.ac.manchester.tornado.benchmarks.matrixMultiplication1D.Benchmark();
             case "matrixmultiplication2d" -> new uk.ac.manchester.tornado.benchmarks.matrixMultiplication2D.Benchmark();
+            case "bfs" -> new uk.ac.manchester.tornado.benchmarks.bfs.Benchmark();
             default -> throw new TornadoRuntimeException("Benchmark not recognized: " + benchmark);
         };
     }

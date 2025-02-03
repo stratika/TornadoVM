@@ -60,7 +60,7 @@ __RUNNER__ = ""
 if __JAVA_VERSION__ != JDK_8_VERSION:
     __RUNNER__ = " -m tornado.benchmarks/"
 __RUNNER__ += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
-__JVM_FLAGS__ = "-Xms24G -Xmx24G -server -Dtornado.recover.bailout=False "
+__JVM_FLAGS__ = "-Xms32G -Xmx32G -Dtornado.device.memory=16GB -server -Dtornado.recover.bailout=False "
 __TORNADO_COMMAND__ = "tornado "
 __SKIP_TORNADOVM__ = " -Dtornado.benchmarks.skiptornadovm=True "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
@@ -104,6 +104,7 @@ __BENCHMARKS__ = [
     "rotateimage",
     "rotatevector",
     "blackandwhitefilter",
+    "bfs",
 ]
 
 ## ========================================================================================
@@ -138,7 +139,8 @@ __DIMENSIONS__ = {
     "vectoradditionfloat4": "1",
     "rotateimage": "2",
     "rotatevector": "1",
-    "blackandwhitefilter": "2"
+    "blackandwhitefilter": "2",
+    "bfs": "2"
 }
 
 
@@ -313,6 +315,18 @@ allSizes = {
         ["getSize()"]
     ],
     "blackandwhitefilter": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
+    "bfs": [
+        [
+            256,
+            512,
+            1024,
+            2048,
+            4096,
+            8192,
+            16384
+        ],
+        ["getSize()"],
+    ],
 }
 
 mediumSizes = {
@@ -431,6 +445,15 @@ mediumSizes = {
         ["getSize()"]
     ],
     "blackandwhitefilter": [[256, 512, 1024, 2048], ["getSize()"]],
+    "bfs": [
+        [
+            256,
+            512,
+            1024,
+            2048
+        ],
+        ["getSize()"],
+    ],
 }
 
 

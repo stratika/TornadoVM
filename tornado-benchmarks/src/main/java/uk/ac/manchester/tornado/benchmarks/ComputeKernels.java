@@ -30,6 +30,9 @@ import uk.ac.manchester.tornado.api.types.images.ImageFloat3;
 import uk.ac.manchester.tornado.api.types.vectors.Byte3;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
+import java.util.Random;
+import java.util.stream.IntStream;
+
 public class ComputeKernels {
     // CHECKSTYLE:OFF
 
@@ -364,6 +367,86 @@ public class ComputeKernels {
     public static void vectorAdd(VectorFloat4 a, VectorFloat4 b, VectorFloat4 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, Float4.add(a.get(i), b.get(i)));
+        }
+    }
+
+    public static void computeFFT(IntArray input, int dim, final IntArray factors, int size, int dummyFac, IntArray dimArr) {
+        for (@Parallel int i = 0; i < dimArr.get(0); i++) {
+            for (@Parallel int j = 0; j < dimArr.get(1); j++) {
+                int product = 1;
+                int state = 0;
+
+                for (int z = 0; z < factors.getSize(); z++) {
+                    product *= input.get(z);
+
+                    if (state == 0) {
+                        state = 1;
+                        if (factors.get(z) == 2) { // factors[z]
+                            int factor = 2;
+                            int q = factors.get(z) / product;
+                            int p_1 = product / factor;
+                            for (int k = 0; k < q; k++) {
+                                for (int k1 = 0; k1 < p_1; k1++) {
+                                    input.set(k1, i + j + z + k);
+                                }
+                            }
+                        }
+                    } else {
+                        state = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    public static void bfs(IntArray vertices, IntArray adjacencyMatrix, int numNodes, IntArray h_true, IntArray currentDepth) {
+        for (@Parallel int from = 0; from < numNodes; from++) {
+            for (@Parallel int to = 0; to < numNodes; to++) {
+                int elementAccess = from * numNodes + to;
+
+                if (adjacencyMatrix.get(elementAccess) == 1) {
+                    int dfirst = vertices.get(from);
+                    int dsecond = vertices.get(to);
+                    if ((currentDepth.get(0) == dfirst) && (dsecond == -1)) {
+                        vertices.set(to, dfirst + 1);
+                        h_true.set(0, 0);
+                    }
+                }
+            }
+        }
+    }
+
+    private static int[] generateIntRandomArray(int numNodes) {
+        Random r = new Random();
+        int bound = r.nextInt(numNodes);
+        IntStream streamArray = r.ints(bound, 0, numNodes);
+        int[] array = streamArray.toArray();
+        return array;
+    }
+
+    public static void connect(int from, int to, IntArray graph, int N) {
+        if (from != to && (graph.get(from * N + to) == 0)) {
+            graph.set(from * N + to, 1);
+        }
+    }
+
+    public static void generateRandomGraph(IntArray adjacencyMatrix, int numNodes, int root) {
+        Random r = new Random();
+        int bound = r.nextInt(numNodes);
+        IntStream fromStream = r.ints(bound, 0, numNodes);
+        int[] f = fromStream.toArray();
+        for (int k = 0; k < f.length; k++) {
+
+            int from = f[k];
+            if (k == 0) {
+                from = root;
+            }
+
+            int[] toArray = generateIntRandomArray(numNodes);
+
+            for (int i = 0; i < toArray.length; i++) {
+                connect(from, toArray[i], adjacencyMatrix, numNodes);
+            }
         }
     }
     // CHECKSTYLE:ON

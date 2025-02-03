@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.examples.fft;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
@@ -36,9 +37,8 @@ public class TestFFT {
     // CHECKSTYLE:OFF
 
     public static void nesting(IntArray input, int dim, final IntArray factors, int size, int dummyFac, IntArray dimArr) {
-
-        for (int i = 0; i < dimArr.get(0); i++) {
-            for (int j = 0; j < dimArr.get(1); j++) {
+        for (@Parallel int i = 0; i < dimArr.get(0); i++) {
+            for (@Parallel int j = 0; j < dimArr.get(1); j++) {
                 int product = 1;
                 int state = 0;
 
