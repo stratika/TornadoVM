@@ -103,7 +103,7 @@ __BENCHMARKS__ = [
     "vectoradditionfloat4",
     "rotateimage",
     "rotatevector",
-    "blackAndWhiteFilter",
+    "blackandwhitefilter",
 ]
 
 ## ========================================================================================
@@ -123,7 +123,9 @@ __DIMENSIONS__ = {
     "nbody": "1",
     "sgemm": "2",
     "dgemm": "2",
-    "matrixvectormultiplication": "2",
+    "matrixvectormultiplication": "1",
+    "matrixmultiplication1d": "2",
+    "matrixmultiplication2d": "2",
     "matrixtranspose": "2",
     "matrixaddition": "2",
     "hilbert": "2",
@@ -136,7 +138,7 @@ __DIMENSIONS__ = {
     "vectoradditionfloat4": "1",
     "rotateimage": "2",
     "rotatevector": "1",
-    "blackAndWhiteFilter": "2"
+    "blackandwhitefilter": "2"
 }
 
 
@@ -246,6 +248,8 @@ allSizes = {
     "sgemm": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
     "dgemm": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
     "matrixvectormultiplication": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
+    "matrixmultiplication1d": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
+    "matrixmultiplication2d": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
     "matrixtranspose": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
     "matrixaddition": [[64, 128, 256, 512, 1024, 2048, 4096], ["getSize()"]],
     "hilbert": [[16, 32, 64, 128, 256, 512, 1024, 2048], ["getSize()"]],
@@ -308,7 +312,7 @@ allSizes = {
         ],
         ["getSize()"]
     ],
-    "blackAndWhiteFilter": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
+    "blackandwhitefilter": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
 }
 
 mediumSizes = {
@@ -380,6 +384,8 @@ mediumSizes = {
     "sgemm": [[64, 128, 256, 512], ["getSize()"]],
     "dgemm": [[64, 128, 256, 512], ["getSize()"]],
     "matrixvectormultiplication": [[64, 128, 256, 512], ["getSize()"]],
+    "matrixmultiplication1d": [[64, 128, 256, 512], ["getSize()"]],
+    "matrixmultiplication2d": [[64, 128, 256, 512], ["getSize()"]],
     "matrixtranspose": [[64, 128, 256, 512], ["getSize()"]],
     "matrixaddition": [[64, 128, 256, 512], ["getSize()"]],
     "hilbert": [[16, 32, 64, 128, 256], ["getSize()"]],
@@ -424,7 +430,7 @@ mediumSizes = {
         ],
         ["getSize()"]
     ],
-    "blackAndWhiteFilter": [[256, 512, 1024, 2048], ["getSize()"]],
+    "blackandwhitefilter": [[256, 512, 1024, 2048], ["getSize()"]],
 }
 
 
