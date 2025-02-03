@@ -98,6 +98,7 @@ __BENCHMARKS__ = [
     "hilbert",
     "mandelbrot",
     "dft",
+    "fft",
     "juliaset",
     "vectoraddition",
     "vectoradditionfloat4",
@@ -134,6 +135,7 @@ __DIMENSIONS__ = {
     "dotimage": "2",
     "mandelbrot": "2",
     "dft": "1",
+    "fft": "2",
     "juliaset": "2",
     "vectoraddition": "1",
     "vectoradditionfloat4": "1",
@@ -269,6 +271,7 @@ allSizes = {
     "dotimage": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
     "mandelbrot": [[64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536], ["getSize()"]],
     "dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536], ["getSize()"]],
+    "fft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536], ["getSize()"]],
     "juliaset": [[512, 1024, 2048, 4096, 8192], ["getSize()"]],
     "vectoraddition": [
         [
@@ -414,6 +417,7 @@ mediumSizes = {
     "dotimage": [[256, 512, 1024, 2048], ["getSize()"]],
     "mandelbrot": [[64, 128, 256, 512, 1024], ["getSize()"]],
     "dft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
+    "fft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
     "juliaset": [[512, 1024, 2048, 4096], ["getSize()"]],
     "vectoraddition": [
         [

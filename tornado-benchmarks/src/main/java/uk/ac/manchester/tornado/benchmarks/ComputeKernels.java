@@ -370,14 +370,14 @@ public class ComputeKernels {
         }
     }
 
-    public static void computeFFT(IntArray input, int dim, final IntArray factors, int size, int dummyFac, IntArray dimArr) {
+    public static void computeFFT(IntArray output, final IntArray factors, IntArray dimArr) {
         for (@Parallel int i = 0; i < dimArr.get(0); i++) {
             for (@Parallel int j = 0; j < dimArr.get(1); j++) {
                 int product = 1;
                 int state = 0;
 
                 for (int z = 0; z < factors.getSize(); z++) {
-                    product *= input.get(z);
+                    product *= output.get(z);
 
                     if (state == 0) {
                         state = 1;
@@ -387,7 +387,7 @@ public class ComputeKernels {
                             int p_1 = product / factor;
                             for (int k = 0; k < q; k++) {
                                 for (int k1 = 0; k1 < p_1; k1++) {
-                                    input.set(k1, i + j + z + k);
+                                    output.set(k1, i + j + z + k);
                                 }
                             }
                         }

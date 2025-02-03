@@ -96,7 +96,7 @@ public class TestFFT {
         input.set(1, 4);
         factors.set(1, 2);
         int dim = 2;
-        IntArray dimArr = new IntArray(3);
+        IntArray dimArr = new IntArray(2);
         dimArr.init(2);
         int size = factors.getSize();
         int dummyFac = 2;
