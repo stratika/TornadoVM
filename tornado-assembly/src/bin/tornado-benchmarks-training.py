@@ -103,6 +103,7 @@ __BENCHMARKS__ = [
     "vectoradditionfloat4",
     "rotateimage",
     "rotatevector",
+    "blackAndWhiteFilter",
 ]
 
 ## ========================================================================================
@@ -134,7 +135,8 @@ __DIMENSIONS__ = {
     "vectoraddition": "1",
     "vectoradditionfloat4": "1",
     "rotateimage": "2",
-    "rotatevector": "1"
+    "rotatevector": "1",
+    "blackAndWhiteFilter": "2"
 }
 
 
@@ -306,6 +308,7 @@ allSizes = {
         ],
         ["getSize()"]
     ],
+    "blackAndWhiteFilter": [[256, 512, 1024, 2048, 8192, 16384], ["getSize()"]],
 }
 
 mediumSizes = {
@@ -421,6 +424,7 @@ mediumSizes = {
         ],
         ["getSize()"]
     ],
+    "blackAndWhiteFilter": [[256, 512, 1024, 2048], ["getSize()"]],
 }
 
 

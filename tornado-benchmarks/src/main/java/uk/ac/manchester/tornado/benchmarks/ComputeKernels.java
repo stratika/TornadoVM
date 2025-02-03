@@ -314,6 +314,22 @@ public class ComputeKernels {
         }
     }
 
+    public static void blackAndWhiteCompute(IntArray image, final int w, final int s) {
+        for (@Parallel int i = 0; i < w; i++) {
+            for (@Parallel int j = 0; j < s; j++) {
+                int rgb = image.get(i * s + j);
+                int alpha = (rgb >> 24) & 0xff;
+                int red = (rgb >> 16) & 0xFF;
+                int green = (rgb >> 8) & 0xFF;
+                int blue = (rgb & 0xFF);
+
+                int grayLevel = (red + green + blue) / 3;
+                int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
+                image.set(i * s + j, gray);
+            }
+        }
+    }
+
     public static void euler(int size, LongArray five, LongArray outputA, LongArray outputB, LongArray outputC, LongArray outputD, LongArray outputE) {
         for (@Parallel int e = 1; e < five.getSize(); e++) {
             long e5 = five.get(e);

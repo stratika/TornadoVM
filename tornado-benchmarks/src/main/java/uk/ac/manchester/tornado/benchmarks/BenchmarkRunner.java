@@ -281,6 +281,7 @@ public abstract class BenchmarkRunner {
             case "stencil" -> new uk.ac.manchester.tornado.benchmarks.stencil.Benchmark();
             case "vectoraddition" -> new uk.ac.manchester.tornado.benchmarks.vectorAddition.Benchmark();
             case "vectoradditionfloat4" -> new uk.ac.manchester.tornado.benchmarks.vectorAdditionFloat4.Benchmark();
+            case "blackandwhitefilter" -> new uk.ac.manchester.tornado.benchmarks.blackAndWhiteFilter.Benchmark();
             default -> throw new TornadoRuntimeException("Benchmark not recognized: " + benchmark);
         };
     }
