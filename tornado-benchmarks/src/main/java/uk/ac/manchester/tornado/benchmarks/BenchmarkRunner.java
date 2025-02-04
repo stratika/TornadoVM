@@ -286,6 +286,8 @@ public abstract class BenchmarkRunner {
             case "matrixmultiplication1d" -> new uk.ac.manchester.tornado.benchmarks.matrixMultiplication1D.Benchmark();
             case "matrixmultiplication2d" -> new uk.ac.manchester.tornado.benchmarks.matrixMultiplication2D.Benchmark();
             case "bfs" -> new uk.ac.manchester.tornado.benchmarks.bfs.Benchmark();
+            case "maxreductionglobal" -> new uk.ac.manchester.tornado.benchmarks.maxReductionGlobal.Benchmark();
+            case "maxreductionlocal" -> new uk.ac.manchester.tornado.benchmarks.maxReductionLocal.Benchmark();
             default -> throw new TornadoRuntimeException("Benchmark not recognized: " + benchmark);
         };
     }

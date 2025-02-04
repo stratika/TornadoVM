@@ -106,6 +106,8 @@ __BENCHMARKS__ = [
     "rotatevector",
     "blackandwhitefilter",
     "bfs",
+    "maxreductionglobal",
+    "maxreductionlocal",
 ]
 
 ## ========================================================================================
@@ -142,7 +144,9 @@ __DIMENSIONS__ = {
     "rotateimage": "2",
     "rotatevector": "1",
     "blackandwhitefilter": "2",
-    "bfs": "2"
+    "bfs": "2",
+    "maxreductionglobal": "1",
+    "maxreductionlocal": "1"
 }
 
 
@@ -330,6 +334,38 @@ allSizes = {
         ],
         ["getSize()"],
     ],
+    "maxreductionglobal": [
+        [
+            65536,
+            131072,
+            262144,
+            524288,
+            1048576,
+            2097152,
+            4194304,
+            8388608,
+            16777216,
+            33554432,
+            67108864
+        ],
+        ["getSize()"],
+    ],
+    "maxreductionlocal": [
+        [
+            65536,
+            131072,
+            262144,
+            524288,
+            1048576,
+            2097152,
+            4194304,
+            8388608,
+            16777216,
+            33554432,
+            67108864
+        ],
+        ["getSize()"],
+    ],
 }
 
 mediumSizes = {
@@ -455,6 +491,26 @@ mediumSizes = {
             512,
             1024,
             2048
+        ],
+        ["getSize()"],
+    ],
+    "maxreductionglobal": [
+        [
+            65536,
+            131072,
+            262144,
+            524288,
+            1048576
+        ],
+        ["getSize()"],
+    ],
+    "maxreductionlocal": [
+        [
+            65536,
+            131072,
+            262144,
+            524288,
+            1048576
         ],
         ["getSize()"],
     ],
