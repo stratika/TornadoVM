@@ -108,6 +108,7 @@ __BENCHMARKS__ = [
     "bfs",
     "maxreductionglobal",
     "maxreductionlocal",
+    "integration",
 ]
 
 ## ========================================================================================
@@ -146,7 +147,8 @@ __DIMENSIONS__ = {
     "blackandwhitefilter": "2",
     "bfs": "2",
     "maxreductionglobal": "1",
-    "maxreductionlocal": "1"
+    "maxreductionlocal": "1",
+    "integration": "1"
 }
 
 
@@ -366,6 +368,22 @@ allSizes = {
         ],
         ["getSize()"],
     ],
+    "integration": [
+        [
+            65536,
+            131072,
+            262144,
+            524288,
+            1048576,
+            2097152,
+            4194304,
+            8388608,
+            16777216,
+            33554432,
+            67108864
+        ],
+        ["getSize()"],
+    ],
 }
 
 mediumSizes = {
@@ -505,6 +523,16 @@ mediumSizes = {
         ["getSize()"],
     ],
     "maxreductionlocal": [
+        [
+            65536,
+            131072,
+            262144,
+            524288,
+            1048576
+        ],
+        ["getSize()"],
+    ],
+    "integration": [
         [
             65536,
             131072,
