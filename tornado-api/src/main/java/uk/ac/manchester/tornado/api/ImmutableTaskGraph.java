@@ -166,12 +166,12 @@ public class ImmutableTaskGraph {
         return taskGraph.getDevice();
     }
 
-    Collection<?> getOutputs() {
-        return taskGraph.getOutputs();
-    }
-
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraph.enableProfiler(profilerMode);
+    }
+
+    Collection<?> getOutputs() {
+        return taskGraph.getOutputs();
     }
 
     void withConcurrentDevices() {
@@ -221,4 +221,9 @@ public class ImmutableTaskGraph {
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
         taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
     }
+
+    void updatePersistedObjectState(ImmutableTaskGraph taskGraphSrc) {
+        taskGraph.updatePersistedObjectState(taskGraphSrc.taskGraph.taskGraphImpl);
+    }
+
 }
