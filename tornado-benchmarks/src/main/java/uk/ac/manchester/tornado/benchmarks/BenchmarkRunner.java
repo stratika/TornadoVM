@@ -149,7 +149,6 @@ public abstract class BenchmarkRunner {
                         continue;
                     }
                 }
-
                 TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
 
                 TornadoRuntimeProvider.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
@@ -186,12 +185,12 @@ public abstract class BenchmarkRunner {
                 if (isPowerMonitoringEnabled()) {
                     stringBuilder.append("Energy: bm=" + id + ", " + "id=" + driverIndex + ":" + deviceIndex + ", " + benchmarkDriver.getEnergySummary() + "\n");
                 }
-                if (STORE_OUTPUT_TO_FILE.isEmpty()) {
-                    System.out.printf(stringBuilder.toString());
-                } else {
-                    redirectOutputToFile(stringBuilder.toString());
-                }
             }
+        }
+        if (STORE_OUTPUT_TO_FILE.isEmpty()) {
+            System.out.printf(stringBuilder.toString());
+        } else {
+            redirectOutputToFile(stringBuilder.toString());
         }
     }
 
@@ -219,11 +218,11 @@ public abstract class BenchmarkRunner {
                     + ", speedupFirstIteration=" + refFirstIteration / deviceTest.getFirstIteration() //
                     + ", CV=" + deviceTest.getCV() //
                     + ", deviceName=" + driver.getDevice(deviceIndex) + "\n");
-            if (STORE_OUTPUT_TO_FILE.isEmpty()) {
-                System.out.printf(stringBuilder.toString());
-            } else {
-                redirectOutputToFile(stringBuilder.toString());
-            }
+        }
+        if (STORE_OUTPUT_TO_FILE.isEmpty()) {
+            System.out.printf(stringBuilder.toString());
+        } else {
+            redirectOutputToFile(stringBuilder.toString());
         }
     }
 
