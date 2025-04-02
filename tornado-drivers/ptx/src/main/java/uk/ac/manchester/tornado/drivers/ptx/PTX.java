@@ -80,11 +80,6 @@ public class PTX {
         return platform;
     }
 
-    public static PTXTornadoDevice defaultDevice() {
-        final int deviceIndex = Integer.parseInt(Tornado.getProperty("tornado.ptx.device", "0"));
-        return new PTXTornadoDevice(deviceIndex);
-    }
-
     public static void run(PTXTornadoDevice tornadoDevice, PTXInstalledCode openCLCode, TaskDataContext taskMeta, Access[] accesses, Object... parameters) {
         if (parameters.length != accesses.length) {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
@@ -103,12 +98,14 @@ public class PTX {
 
             switch (access) {
                 case READ_WRITE:
+                    tornadoDevice.allocate(object, 0, deviceState, Access.READ_WRITE);
+                    tornadoDevice.ensurePresent(executionPlanId, object, deviceState, null, 0, 0);
                 case READ_ONLY:
-                    tornadoDevice.allocate(object, 0, deviceState);
+                    tornadoDevice.allocate(object, 0, deviceState, Access.READ_ONLY);
                     tornadoDevice.ensurePresent(executionPlanId, object, deviceState, null, 0, 0);
                     break;
                 case WRITE_ONLY:
-                    tornadoDevice.allocate(object, 0, deviceState);
+                    tornadoDevice.allocate(object, 0, deviceState, Access.WRITE_ONLY);
                     break;
                 default:
                     break;
@@ -118,7 +115,7 @@ public class PTX {
 
         // Create call wrapper
         final int numArgs = parameters.length;
-        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, numArgs);
+        KernelStackFrame callWrapper = tornadoDevice.createKernelStackFrame(executionPlanId, numArgs, Access.NONE);
         callWrapper.reset();
 
         // Fill header of call callWrapper with empty values

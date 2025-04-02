@@ -26,22 +26,29 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
-public class AtomicsBuffer implements XPUBuffer {
+public class OCLAtomicsBuffer implements XPUBuffer {
 
     private int[] atomicsList;
     private static final int OFFSET = 0;
     private final OCLDeviceContext deviceContext;
     private long setSubRegionSize;
+    private Access access;
 
-    public AtomicsBuffer(int[] arr, OCLDeviceContext deviceContext) {
+    private static final TornadoLogger logger = new TornadoLogger(OCLAtomicsBuffer.class);
+
+    public OCLAtomicsBuffer(int[] arr, OCLDeviceContext deviceContext, Access access) {
         this.deviceContext = deviceContext;
         this.atomicsList = arr;
+        this.access = access;
         deviceContext.getMemoryManager().allocateAtomicRegion();
     }
 
@@ -90,13 +97,13 @@ public class AtomicsBuffer implements XPUBuffer {
     }
 
     @Override
-    public void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
         deviceContext.getMemoryManager().allocateAtomicRegion();
     }
 
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
-        deviceContext.getMemoryManager().deallocateAtomicRegion();
+        logger.debug("Marking atomics buffer as free has no effect because we do not use the BufferProvider for this buffer.");
     }
 
     @Override
@@ -125,8 +132,24 @@ public class AtomicsBuffer implements XPUBuffer {
     }
 
     @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new TornadoRuntimeException("Not implemented");
+    }
+
+    @Override
+    public int getSizeOfType() {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
+    }
+
+    @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate();
+        // Do not deallocate the global area for atomics by default since all
+        // atomics go to the same area
+        if (TornadoOptions.cleanUpAtomicsSpace()) {
+            deviceContext.getMemoryManager().deallocateAtomicRegion();
+            return OCLMemoryManager.atomicRegionSize();
+        }
+        return 0;
     }
 
 }

@@ -74,6 +74,10 @@ public class ImmutableTaskGraph {
         taskGraph.syncRuntimeTransferToHost(object, offset, partialCopySize);
     }
 
+    TaskGraph getTaskGraph() {
+        return taskGraph;
+    }
+
     long getTotalTime() {
         return taskGraph.getTotalTime();
     }
@@ -162,12 +166,12 @@ public class ImmutableTaskGraph {
         return taskGraph.getDevice();
     }
 
-    Collection<?> getOutputs() {
-        return taskGraph.getOutputs();
-    }
-
     void enableProfiler(ProfilerMode profilerMode) {
         taskGraph.enableProfiler(profilerMode);
+    }
+
+    Collection<?> getOutputs() {
+        return taskGraph.getOutputs();
     }
 
     void withConcurrentDevices() {
@@ -213,4 +217,13 @@ public class ImmutableTaskGraph {
     long getCurrentDeviceMemoryUsage() {
         return taskGraph.getCurrentDeviceMemoryUsage();
     }
+
+    void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, ImmutableTaskGraph taskGraphSrc) {
+        taskGraph.mapOnDeviceMemoryRegion(destArray, srcArray, offset, taskGraphSrc.taskGraph.taskGraphImpl);
+    }
+
+    void updatePersistedObjectState(ImmutableTaskGraph taskGraphSrc) {
+        taskGraph.updatePersistedObjectState(taskGraphSrc.taskGraph.taskGraphImpl);
+    }
+
 }

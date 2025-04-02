@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2024, APT Group, Department of Computer Science,
+ * Copyright (c) 2013-2025, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -129,6 +129,13 @@ public class TornadoOptions {
      * Enable/Disable FMA Optimizations. True by default.
      */
     public static final boolean ENABLE_FMA = getBooleanValue("tornado.enable.fma", TRUE);
+
+    /**
+     * Enable/Disable Loop Unroll SPIR-V instruction: True by default.
+     *
+     * <p>This flag only applies for the SPIR-V Backend</p>
+     */
+    public static final boolean ENABLE_SPIRV_LOOP_UNROLL = getBooleanValue("tornado.spirv.loopunroll", TRUE);
     /**
      * Enable/Disable Fix Reads Optimization. True by default.
      */
@@ -210,10 +217,22 @@ public class TornadoOptions {
      * It enables inlining during Java bytecode parsing. Default is False.
      */
     public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
+
     /**
-     * Use Level Zero or OpenCL as the SPIR-V Code Dispatcher and Runtime. Allowed values: "opencl", "levelzero". The default option is "opencl".
+     * List of installed SPIR-V runtimes. Allowed values : "opencl,levelzero". The first in the list is set to the
+     * default one.
+     *
+     * <p>
+     * <ul>
+     * <il>Use <code>-Dtornado.spirv.runtimes=opencl</code> for OpenCL only.
+     * <il>Use <code>-Dtornado.spirv.runtimes=levelzero</code> for LevelZero only.
+     * <il>Use <code>-Dtornado.spirv.runtimes=opencl,levelzero</code> for both OpenCL and Level Zero runtimes, being
+     * OpenCL the first in the list (default).
+     * *</ul>
+     * </p>
      */
-    public static final String SPIRV_DISPATCHER = getProperty("tornado.spirv.dispatcher", "opencl");
+    public static final String SPIRV_INSTALLED_RUNTIMES = getProperty("tornado.spirv.runtimes", "opencl,levelzero");
+
     /**
      * Check I/O parameters for every task within a task-graph.
      */
@@ -334,6 +353,15 @@ public class TornadoOptions {
     }
 
     /**
+     * Option to deallocate after the execution plan finishes. It frees all
+     * resources consumed by the execution plan, which can involved multiple
+     * task graphs.
+     */
+    public static boolean isDeallocateBufferEnabled() {
+        return getBooleanValue("tornado.deallocate.buffers", TRUE);
+    }
+
+    /**
      * Option to enable profiler. It can be disabled at any point during runtime.
      *
      * @return boolean.
@@ -342,10 +370,14 @@ public class TornadoOptions {
         return TORNADO_PROFILER || getBooleanValue(PROFILER, FALSE);
     }
 
+    public static boolean isUpsReaderEnabled() {
+        return UPS_IP_ADDRESS != null;
+    }
+
     /**
-     * Set Loop unrolling factor for the FPGA compilation. Default is set to 2.
+     * Set Loop unrolling factor. Default is set to 4.
      */
-    public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "2"));
+    public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "4"));
 
     /**
      * Enable basic debug information. Disabled by default.
@@ -407,6 +439,8 @@ public class TornadoOptions {
      */
     public static final boolean ENABLE_OOO_EXECUTION = getBooleanValue("tornado.ooo-execution.enable", FALSE);
 
+    public static final String UPS_IP_ADDRESS = getProperty("tornado.ups.ip", null);
+
     /**
      * Option for enabling partial loop unrolling. The unroll factor can be
      * configured to take any integer value of power of 2 and less than 32.
@@ -433,5 +467,17 @@ public class TornadoOptions {
         String contextEmulatorIntelFPGA = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
         String contextEmulatorXilinxFPGA = System.getenv("XCL_EMULATION_MODE");
         return (contextEmulatorIntelFPGA != null && (contextEmulatorIntelFPGA.equals("1"))) || (contextEmulatorXilinxFPGA != null && (contextEmulatorXilinxFPGA.equals("sw_emu")));
+    }
+
+    /**
+     * Flag to signal to clean up the atomics area (as in accelerator's global memory) when the Execution Plan
+     * resource is closed. This is False by default, since this area is global for all kernels. In near future,
+     * we will change this to use a unique area per execution plan, and have the option to turn on and off
+     * this flag as needed.
+     * 
+     * @return boolean
+     */
+    public static boolean cleanUpAtomicsSpace() {
+        return getBooleanValue("tornado.clean.atomics.space", FALSE);
     }
 }
