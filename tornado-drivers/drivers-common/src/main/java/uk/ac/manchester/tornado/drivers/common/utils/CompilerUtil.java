@@ -46,6 +46,7 @@ import java.lang.reflect.Method;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
@@ -60,6 +61,9 @@ public class CompilerUtil {
             if (m.getName().equals(nameMethod)) {
                 method = m;
             }
+        }
+        if (method == null) {
+            throw new TornadoRuntimeException("Method not found: " + nameMethod + " in " + klass + ". Consider change the access level of the method to be public.");
         }
         return method;
     }

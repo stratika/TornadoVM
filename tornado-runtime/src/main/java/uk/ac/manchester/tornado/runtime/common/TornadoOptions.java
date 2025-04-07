@@ -326,6 +326,12 @@ public class TornadoOptions {
      */
     public static boolean USE_BLOCK_SCHEDULER = getBooleanValue("tornado.scheduler.block", FALSE);
 
+    public static final String INPUT_CLASSFILE_DIR = Tornado.getProperty("tornado.input.classfile.dir", null);
+
+    public static final String INPUT_CLASSNAME = Tornado.getProperty("tornado.input.classname", null);
+
+    public static final String PARAMETER_SIZE_DIR = Tornado.getProperty("tornado.parameter.size.dir", null);
+
     public static boolean TORNADO_PROFILER_LOG = false;
 
     public static boolean TORNADO_PROFILER = false;
@@ -474,7 +480,7 @@ public class TornadoOptions {
      * resource is closed. This is False by default, since this area is global for all kernels. In near future,
      * we will change this to use a unique area per execution plan, and have the option to turn on and off
      * this flag as needed.
-     * 
+     *
      * @return boolean
      */
     public static boolean cleanUpAtomicsSpace() {
