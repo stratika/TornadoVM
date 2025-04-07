@@ -49,7 +49,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.drivers.opencl.tests.TestOpenCLJITCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -70,53 +69,48 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-/**
- * This class aims to provide a way that TornadoVM can compile at runtime class files.
- */
 public class CompileClass {
     private static int numberOfArgsPassed;
     private static int numberOfArgsFromSignature;
     private static int argSizesIndex = 0;
-    private static String[] argNames;
 
-    private static Class[] getMethodTypesFromClass(Class<?> klass, String methodName) {
+    private static Class<?>[] getMethodTypesFromClass(Class<?> klass, String methodName) {
         try {
-            Method[] methods = klass.getMethods();
-            for (int i = 0; i < methods.length; i++) {
-                if (methods[i].getName().equals(methodName)) {
-                    Class[] types = methods[i].getParameterTypes();
+            for (Method method : klass.getMethods()) {
+                if (method.getName().equals(methodName)) {
+                    Class<?>[] types = method.getParameterTypes();
                     numberOfArgsFromSignature = types.length;
                     return types;
                 }
             }
         } catch (IllegalArgumentException e) {
-            String message = "[TornadoVM-CompileClass] Load class failed.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
+            printErrorMessage("[TornadoVM-CompileClass] Load class failed.");
+            throw new TornadoRuntimeException("Load class failed.");
         }
-        String message = "[TornadoVM-CompileClass] No method found in the class file.";
-        printErrorMessage(message);
-        throw new TornadoRuntimeException(message);
+        throw new TornadoRuntimeException("[TornadoVM-CompileClass] No method found in the class file.");
     }
 
-    @SuppressWarnings("checkstyle:LineLength")
-    private void checkParameterSizes() {
+    private static void checkParameterSizes() {
         if (numberOfArgsPassed != numberOfArgsFromSignature) {
-            String message = "[TornadoVM-CompileClass] The number of parameters passed in JSON (" + numberOfArgsPassed + ") are not the same as the number of boxed types in the method (" + numberOfArgsFromSignature + ").";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
+            throw new TornadoRuntimeException("[TornadoVM-CompileClass] Parameter mismatch: JSON vs. method signature.");
         }
     }
 
-    private static Object[] resolveParametersFromTypes(Class[] types, int[] parameterSizes) {
-        Object[] args = new Object[types.length];
+    public Object[] resolveParameters(Class<?> klass, String methodName, Object[] inputData, int[] parameterSizes) {
+        Class<?>[] types = getMethodTypesFromClass(klass, methodName);
+        checkParameterSizes();
+        Object[] parameters = new Object[types.length];
         for (int i = 0; i < types.length; i++) {
-            args[i] = lookupBoxedTypes(types[i], parameterSizes);
+            if (inputData != null && inputData.length > i && inputData[i] != null) {
+                parameters[i] = inputData[i];
+            } else {
+                parameters[i] = lookupBoxedTypes(types[i], parameterSizes);
+            }
         }
-        return args;
+        return parameters;
     }
 
-    private static Object lookupBoxedTypes(Class type, int[] parameterSizes) {
+    private static Object lookupBoxedTypes(Class<?> type, int[] parameterSizes) {
         switch (type.getTypeName()) {
             case "int[]":
                 return new int[parameterSizes[argSizesIndex++]];
@@ -161,199 +155,120 @@ public class CompileClass {
             case "uk.ac.manchester.tornado.api.types.arrays.IntArray":
                 return new IntArray(parameterSizes[argSizesIndex++]);
             default:
-                String message = "[TornadoVM-CompileClass] - type(" + type.getTypeName() + ") is not recognized by the frontend.";
-                printErrorMessage(message);
-                throw new TornadoRuntimeException(message);
+                throw new TornadoRuntimeException("[TornadoVM-CompileClass] Unsupported type: " + type.getTypeName());
         }
     }
 
     public MetaCompilation compileMethod(long executionPlanId, Class<?> klass, String methodName, TornadoDevice tornadoDevice, Object[] parameters) {
-
-        // Get the method object to be compiled
         Method methodToCompile = CompilerUtil.getMethodForName(klass, methodName);
-
-        // Get Tornado Runtime
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
-
-        // Get the Graal Resolved Java Method
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
-
-        // Get the backend from TornadoVM
         TornadoAcceleratorBackend openCLBackend = tornadoRuntime.getBackend(0);
 
-        // Create a new task for TornadoVM
         ScheduleContext scheduleMetaData = new ScheduleContext("s0");
-        // Create a compilable task
         CompilableTask compilableTask = new CompilableTask(scheduleMetaData, "t0", methodToCompile, parameters);
-        if (compilableTask == null) {
-            String message = "[TornadoVM-CompileClass] Internal error in the TornadoVM compiler.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
-        }
         TaskDataContext taskMeta = compilableTask.meta();
         taskMeta.setDevice(tornadoDevice);
 
-        // 1. Build Common Compiler Phase (Sketcher)
-        // Utility to build a sketcher and insert into the HashMap for fast LookUps
         Providers providers = openCLBackend.getProviders();
         TornadoSuitesProvider suites = openCLBackend.getSuitesProvider();
         Sketch sketch = CompilerUtil.buildSketchForJavaMethod(resolvedJavaMethod, taskMeta, providers, suites);
-        if (sketch == null) {
-            String message = "[TornadoVM-CompileClass] Internal error in the TornadoVM Sketcher.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
-        }
 
         OCLCompilationResult compilationResult = OCLCompiler.compileSketchForDevice(sketch, compilableTask, (OCLProviders) providers, (OCLBackend) openCLBackend.getDefaultBackend(),
                 new EmptyProfiler());
-        if (compilationResult == null) {
-            String message = "[TornadoVM-CompileClass] Internal error in the TornadoVM compiler.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
-        }
 
-        // Install the OpenCL Code in the VM
         OCLInstalledCode openCLCode = ((OCLTornadoDevice) tornadoDevice).getDeviceContext().installCode(executionPlanId, compilationResult);
 
         return new MetaCompilation(taskMeta, openCLCode);
-    }
-
-    public Object[] resolveParameters(Class<?> klass, String methodName, int[] parameterSizes) {
-        // Create a compilable task
-        Class[] types = getMethodTypesFromClass(klass, methodName);
-        checkParameterSizes();
-        Object[] parameters = resolveParametersFromTypes(types, parameterSizes);
-        return parameters;
     }
 
     public void runWithOpenCLAPI(Long executionPlanId, OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskDataContext taskMeta, Object... parameters) {
         OpenCL.run(executionPlanId, tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ_ONLY, Access.READ_ONLY, Access.WRITE_ONLY }, parameters);
     }
 
-    private Class readClassFromFile(File classFile) {
-        if (!classFile.exists()) {
-            String message = "[TornadoVM-CompileClass] " + classFile + " does not exist.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
+    public void compileWithData(String methodName, String className, Object[] inputData, int[] parameterSizes) {
+        TornadoXPUDevice tornadoDevice = TornadoCoreRuntime.getTornadoRuntime().getDefaultDevice();
+        if (tornadoDevice == null) {
+            throw new TornadoRuntimeException("[TornadoVM-CompileClass] No default device available.");
         }
-        Class klass = null;
+
+        Class<?> klass = readClassFromName(className);
+        numberOfArgsPassed = parameterSizes.length;
+        argSizesIndex = 0;
+
+        Object[] parameters = resolveParameters(klass, methodName, inputData, parameterSizes);
+        MetaCompilation meta = compileMethod(0L, klass, methodName, tornadoDevice, parameters);
+        runWithOpenCLAPI(0L, (OCLTornadoDevice) tornadoDevice, (OCLInstalledCode) meta.getInstalledCode(), meta.getTaskMeta(), parameters);
+
+        RuntimeUtilities.dumpKernel(meta.getInstalledCode().getCode());
+    }
+
+    private static Class<?> readClassFromName(String className) {
         try {
-            klass = Class.forName(classFile.getName().split("\\.")[0]);
+            return Class.forName(className);
         } catch (ClassNotFoundException e) {
-            String message = "[TornadoVM-CompileClass] ClassNotFoundException for classname: " + classFile.getName().split("\\.")[0];
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
-        } catch (NoClassDefFoundError e) {
-            e.printStackTrace();
+            throw new TornadoRuntimeException("[TornadoVM-CompileClass] Class not found: " + className);
         }
-        return klass;
-    }
-
-    private Class readClassFromName(String className) {
-        Class klass = null;
-        try {
-            klass = Class.forName(className);
-        } catch (ClassNotFoundException e) {
-            String message = "[TornadoVM-CompileClass] ClassNotFoundException for className: " + className;
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
-        } catch (NoClassDefFoundError e) {
-            e.printStackTrace();
-        }
-        return klass;
-    }
-
-    private String trimComma(String string) {
-        return string.replaceFirst("\\,", "");
-    }
-
-    private int[] readArgSizesFromFile(File parameterSizeFile) {
-        if (!parameterSizeFile.exists()) {
-            String message = "[TornadoVM-CompileClass] " + parameterSizeFile + " does not exist.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
-        }
-        FileReader fileReader;
-        BufferedReader bufferedReader;
-        ArrayList<String> parsedArgNames = new ArrayList<>();
-        ArrayList<Integer> parsedArgSizes = new ArrayList<>();
-
-        try {
-            fileReader = new FileReader(parameterSizeFile);
-            bufferedReader = new BufferedReader(fileReader);
-            String line;
-
-            while ((line = bufferedReader.readLine()) != null) {
-                StringTokenizer tokenizer = new StringTokenizer(line, " :");
-                while (tokenizer.hasMoreElements()) {
-                    int numberOfTokensInLine = tokenizer.countTokens();
-                    String token = tokenizer.nextToken();
-                    if (token.contains("{") || token.contains("}")) {
-                        break;
-                    }
-                    if (numberOfTokensInLine == 2) {
-                        parsedArgNames.add(token);
-                        parsedArgSizes.add(Integer.parseInt(trimComma(tokenizer.nextToken())));
-                    }
-                    numberOfArgsPassed++;
-                }
-            }
-        } catch (IOException e) {
-            String message = "[TornadoVM-CompileClass] Wrong parameter size file or invalid settings.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
-        }
-
-        if (numberOfArgsPassed > 0) {
-            argNames = new String[numberOfArgsPassed];
-            int[] argSizes = new int[numberOfArgsPassed];
-
-            for (int i = 0; i < argSizes.length; i++) {
-                argNames[i] = parsedArgNames.get(i);
-                argSizes[i] = parsedArgSizes.get(i);
-            }
-            return argSizes;
-        } else {
-            String message = "[TornadoVM-CompileClass] No parameter size was loaded from file.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
-        }
-    }
-
-    private static void printErrorMessage(String message) {
-        System.out.println(message);
     }
 
     public void compile(String[] args) {
         TornadoXPUDevice tornadoDevice = TornadoCoreRuntime.getTornadoRuntime().getDefaultDevice();
         if (tornadoDevice == null) {
-            String message = "[TornadoVM-CompileClass] Virtual device has not been obtained.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
+            throw new TornadoRuntimeException("[TornadoVM-CompileClass] No default device available.");
         }
 
         if (args.length != 0) {
-            Class klass = null;
-            if (TornadoOptions.INPUT_CLASSNAME != null) {
-                klass = readClassFromName(TornadoOptions.INPUT_CLASSNAME);
-            } else if (TornadoOptions.INPUT_CLASSFILE_DIR != null) {
-                klass = readClassFromFile(new File(TornadoOptions.INPUT_CLASSFILE_DIR));
-            }
+            Class<?> klass = TornadoOptions.INPUT_CLASSNAME != null ? readClassFromName(TornadoOptions.INPUT_CLASSNAME) : readClassFromFile(new File(TornadoOptions.INPUT_CLASSFILE_DIR));
             int[] parameterSizes = readArgSizesFromFile(new File(TornadoOptions.PARAMETER_SIZE_DIR));
-            long executionPlanId = 0;
 
-            Object[] parameters = resolveParameters(klass, args[0], parameterSizes);
-            MetaCompilation metaCompilation = compileMethod(executionPlanId, klass, args[0], tornadoDevice, parameters);
+            numberOfArgsPassed = parameterSizes.length;
+            argSizesIndex = 0;
 
-            // Check with OpenCL API
-            runWithOpenCLAPI(executionPlanId, (OCLTornadoDevice) tornadoDevice, (OCLInstalledCode) metaCompilation.getInstalledCode(), metaCompilation.getTaskMeta(), parameters);
+            Object[] parameters = resolveParameters(klass, args[0], null, parameterSizes);
+            MetaCompilation metaCompilation = compileMethod(0L, klass, args[0], tornadoDevice, parameters);
+            runWithOpenCLAPI(0L, (OCLTornadoDevice) tornadoDevice, (OCLInstalledCode) metaCompilation.getInstalledCode(), metaCompilation.getTaskMeta(), parameters);
 
             RuntimeUtilities.dumpKernel(metaCompilation.getInstalledCode().getCode());
         } else {
-            String message = "[TornadoVM-CompileClass] Please pass the method name as parameter.";
-            printErrorMessage(message);
-            throw new TornadoRuntimeException(message);
+            throw new TornadoRuntimeException("[TornadoVM-CompileClass] Please provide a method name.");
         }
+    }
+
+    private Class<?> readClassFromFile(File classFile) {
+        if (!classFile.exists()) {
+            throw new TornadoRuntimeException("[TornadoVM-CompileClass] File does not exist: " + classFile);
+        }
+        try {
+            return Class.forName(classFile.getName().split("\\.")[0]);
+        } catch (Exception e) {
+            throw new TornadoRuntimeException("[TornadoVM-CompileClass] Error reading class from file.");
+        }
+    }
+
+    private int[] readArgSizesFromFile(File parameterSizeFile) {
+        if (!parameterSizeFile.exists()) {
+            throw new TornadoRuntimeException("[TornadoVM-CompileClass] Parameter size file not found.");
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(parameterSizeFile))) {
+            ArrayList<Integer> parsedArgSizes = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                StringTokenizer tokenizer = new StringTokenizer(line, " :");
+                if (tokenizer.countTokens() == 2) {
+                    tokenizer.nextToken(); // Skip name
+                    parsedArgSizes.add(Integer.parseInt(tokenizer.nextToken().replace(",", "")));
+                    numberOfArgsPassed++;
+                }
+            }
+            return parsedArgSizes.stream().mapToInt(Integer::intValue).toArray();
+        } catch (IOException e) {
+            throw new TornadoRuntimeException("[TornadoVM-CompileClass] Failed to read parameter size file.");
+        }
+    }
+
+    private static void printErrorMessage(String message) {
+        System.out.println(message);
     }
 
     public static void main(String[] args) {
@@ -364,5 +279,4 @@ public class CompileClass {
             System.exit(1);
         }
     }
-
 }
