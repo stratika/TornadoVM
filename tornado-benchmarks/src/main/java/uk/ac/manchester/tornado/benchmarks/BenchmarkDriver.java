@@ -231,10 +231,13 @@ public abstract class BenchmarkDriver {
             }
 
             timers[toIntExact(i)] = (end - start);
-            totalEnergyMetrics.add(calculateTotalEnergy(start));
-            firstPowerMetricPerIteration.add(powerMetricsPerIteration.getFirst());
-            averagePowerMetricPerIteration.add((long) getAverage(toArray(powerMetricsPerIteration)));
-            lastPowerMetricPerIteration.add(powerMetricsPerIteration.getLast());
+            Long metric = calculateTotalEnergy(start);
+            if (metric > 0) {
+                totalEnergyMetrics.add(metric);
+                firstPowerMetricPerIteration.add(powerMetricsPerIteration.getFirst());
+                averagePowerMetricPerIteration.add((long) getAverage(toArray(powerMetricsPerIteration)));
+                lastPowerMetricPerIteration.add(powerMetricsPerIteration.getLast());
+            }
         }
         barrier();
         if (!DUMP_ENERGY_METRICS_TO_DIRECTORY.isEmpty()) {
@@ -379,19 +382,19 @@ public abstract class BenchmarkDriver {
     }
 
     public long getFirstEnergyMetric() {
-        return totalEnergyMetrics.getFirst();
+        return (totalEnergyMetrics.size() > 0) ? totalEnergyMetrics.getFirst() : -1;
     }
 
     public long getAverageEnergyMetric() {
-        return (long) getAverage(toArray(totalEnergyMetrics));
+        return (totalEnergyMetrics.size() > 0) ? (long) getAverage(toArray(totalEnergyMetrics)) : 0;
     }
 
     public long getLowestEnergyMetric() {
-        return (long) getMin(toArray(totalEnergyMetrics));
+        return (totalEnergyMetrics.size() > 0) ? (long) getMin(toArray(totalEnergyMetrics)) : 0;
     }
 
     public long getHighestEnergyMetric() {
-        return (long) getMax(toArray(totalEnergyMetrics));
+        return (totalEnergyMetrics.size() > 0) ? (long) getMax(toArray(totalEnergyMetrics)) : 0;
     }
 
     public double getVariance() {
@@ -426,7 +429,7 @@ public abstract class BenchmarkDriver {
     private Long calculateTotalEnergy(long startTime) {
         long totalEnergy = 0;
 
-        if (snapshotTimerPerIteration.size() == powerMetricsPerIteration.size()) {
+        if (snapshotTimerPerIteration.size() == powerMetricsPerIteration.size() && snapshotTimerPerIteration.size() > 0) {
             long timeInterval = snapshotTimerPerIteration.get(0) - startTime;
             // Convert from nanoseconds to milliseconds
             timeInterval /= 1000000;
@@ -437,7 +440,7 @@ public abstract class BenchmarkDriver {
                 energyForInterval = timeInterval * powerMetricsPerIteration.get(i + 1);
                 totalEnergy += energyForInterval;
             }
-        } else {
+        } else if (snapshotTimerPerIteration.size() != powerMetricsPerIteration.size()) {
             throw new IllegalArgumentException("All lists must have the same size.");
         }
 
