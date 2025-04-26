@@ -265,6 +265,7 @@ public abstract class BenchmarkRunner {
             case "dotvector" -> new uk.ac.manchester.tornado.benchmarks.dotvector.Benchmark();
             case "euler" -> new uk.ac.manchester.tornado.benchmarks.euler.Benchmark();
             case "hilbert" -> new uk.ac.manchester.tornado.benchmarks.hilbert.Benchmark();
+            case "histogram" -> new uk.ac.manchester.tornado.benchmarks.histogram.Benchmark();
             case "juliaset" -> new uk.ac.manchester.tornado.benchmarks.juliaset.Benchmark();
             case "mandelbrot" -> new uk.ac.manchester.tornado.benchmarks.mandelbrot.Benchmark();
             case "montecarlo" -> new uk.ac.manchester.tornado.benchmarks.montecarlo.Benchmark();
