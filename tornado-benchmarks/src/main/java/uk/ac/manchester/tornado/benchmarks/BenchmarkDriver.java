@@ -427,24 +427,22 @@ public abstract class BenchmarkDriver {
     }
 
     private Long calculateTotalEnergy(long startTime) {
-        long totalEnergy = 0;
+        long totalEnergyMicroJoules = 0;
 
         if (snapshotTimerPerIteration.size() == powerMetricsPerIteration.size() && snapshotTimerPerIteration.size() > 0) {
-            long timeInterval = snapshotTimerPerIteration.get(0) - startTime;
-            // Convert from nanoseconds to milliseconds
-            timeInterval /= 1000000;
-            long energyForInterval = timeInterval * powerMetricsPerIteration.get(0);
-            totalEnergy += energyForInterval;
+            long timeIntervalNs = snapshotTimerPerIteration.get(0) - startTime;
+            long energyForIntervalMicroJoules = (timeIntervalNs * powerMetricsPerIteration.get(0)) / 1000;
+            totalEnergyMicroJoules += energyForIntervalMicroJoules;
             for (int i = 0; i < snapshotTimerPerIteration.size() - 1; i++) {
-                timeInterval = snapshotTimerPerIteration.get(i + 1) - snapshotTimerPerIteration.get(i);
-                energyForInterval = timeInterval * powerMetricsPerIteration.get(i + 1);
-                totalEnergy += energyForInterval;
+                timeIntervalNs = snapshotTimerPerIteration.get(i + 1) - snapshotTimerPerIteration.get(i);
+                energyForIntervalMicroJoules = (timeIntervalNs * powerMetricsPerIteration.get(i)) / 1000;
+                totalEnergyMicroJoules += energyForIntervalMicroJoules;
             }
         } else if (snapshotTimerPerIteration.size() != powerMetricsPerIteration.size()) {
             throw new IllegalArgumentException("All lists must have the same size.");
         }
 
-        return totalEnergy;
+        return totalEnergyMicroJoules / 1000;
     }
 
     public String getEnergySummary() {
