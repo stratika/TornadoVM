@@ -213,6 +213,12 @@ public abstract class BenchmarkDriver {
             runBenchmark(device);
             final long end = System.nanoTime();
             monitoringActive.set(false);
+            // Sleep for 1 millisecond to ensure that monitoring thread will see the flag.
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
 
             if (isProfilerEnabled) {
                 TornadoProfilerResult profilerResult = getExecutionResult().getProfilerResult();
@@ -292,7 +298,9 @@ public abstract class BenchmarkDriver {
     }
 
     public double[] toArray(List<Long> list) {
-        return list.stream().mapToDouble(i -> i).toArray();
+        synchronized (list) {
+            return list.stream().mapToDouble(i -> i).toArray();
+        }
     }
 
     public double getBestKernelTime() {
