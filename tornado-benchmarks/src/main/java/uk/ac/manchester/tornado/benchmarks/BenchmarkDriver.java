@@ -27,6 +27,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -35,13 +40,12 @@ import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.TornadoProfilerResult;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public abstract class BenchmarkDriver {
 
     private static final boolean PRINT_MEM_USAGE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.memusage", "False"));
-    private static final int ENERGY_MONITOR_INTERVAL = Integer.parseInt(System.getProperty("energy.monitor.interval", "0"));
+    private static final int ENERGY_MONITOR_INTERVAL = Integer.parseInt(System.getProperty("energy.monitor.interval", "1"));
     private static final String DUMP_ENERGY_METRICS_TO_DIRECTORY = System.getProperty("dump.energy.metrics.to.directory", "");
     private static final boolean VALIDATE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.validate", "False"));
 
@@ -59,8 +63,6 @@ public abstract class BenchmarkDriver {
     private List<Long> firstPowerMetricPerIteration;
     private List<Long> averagePowerMetricPerIteration;
     private List<Long> lastPowerMetricPerIteration;
-    private List<Long> powerMetricsPerIteration;
-    private List<Long> snapshotTimerPerIteration;
 
     private int startingIndex = 30;
 
@@ -114,7 +116,7 @@ public abstract class BenchmarkDriver {
         return true;
     }
 
-    private boolean isEnergyMonitorIntervalEnabled() {
+    private boolean isEnergyMonitorIntervalValid() {
         return ENERGY_MONITOR_INTERVAL > 0;
     }
 
@@ -164,6 +166,11 @@ public abstract class BenchmarkDriver {
 
     public void benchmarkWithEnergy(String id, TornadoDevice device, boolean isProfilerEnabled) {
         setUp();
+
+        if (!isEnergyMonitorIntervalValid()) {
+            throw new IllegalArgumentException("ENERGY_MONITOR_INTERVAL must be > 0 when using ScheduledExecutorService");
+        }
+
         int size = toIntExact(iterations);
         timers = new double[size];
         if (isProfilerEnabled) {
@@ -176,48 +183,38 @@ public abstract class BenchmarkDriver {
         averagePowerMetricPerIteration = new ArrayList<>();
         lastPowerMetricPerIteration = new ArrayList<>();
 
-        for (long i = 0; i < iterations; i++) {
-            Thread t0;
-            Thread t1;
-            powerMetricsPerIteration = Collections.synchronizedList(new ArrayList<>());
-            snapshotTimerPerIteration = Collections.synchronizedList(new ArrayList<>());
-            t0 = new Thread(() -> runBenchmark(device), "BenchmarkThread");
-            t1 = new Thread(() -> {
-                TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
-                while (t0.isAlive()) {
-                    if (isEnergyMonitorIntervalEnabled()) {
-                        try {
-                            Thread.sleep(ENERGY_MONITOR_INTERVAL);
-                        } catch (InterruptedException e) {
-                            System.err.println("The thread for monitoring the power consumption is interrupted: " + e.getMessage());
-                            Thread.currentThread().interrupt();
-                            throw new TornadoRuntimeException(e);
-                        }
-                    }
-                    long powerMetric = runtime.getPowerMetric();
-                    snapshotTimerPerIteration.add(System.nanoTime());
-                    powerMetricsPerIteration.add(powerMetric);
+        // Setup for power monitoring
+        TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
+        ScheduledExecutorService monitorExecutor = Executors.newSingleThreadScheduledExecutor();
+        AtomicBoolean monitoringActive = new AtomicBoolean(false);
+        List<Long> currentPowerMetrics = Collections.synchronizedList(new ArrayList<>());
+        List<Long> currentTimeMetrics = Collections.synchronizedList(new ArrayList<>());
+
+        ScheduledFuture<?> monitorTask = monitorExecutor.scheduleAtFixedRate(() -> {
+            if (monitoringActive.get()) {
+                Long powerMetric = runtime.getPowerMetric();
+                if (powerMetric != -1) {
+                    currentPowerMetrics.add(powerMetric);
+                    currentTimeMetrics.add(System.nanoTime());
                 }
-            }, "PowerMonitoringThread");
+            }
+        }, 0, ENERGY_MONITOR_INTERVAL, TimeUnit.MILLISECONDS);
+
+        for (long i = 0; i < iterations; i++) {
+            currentPowerMetrics.clear(); // Clear previous iteration's samples
+            currentTimeMetrics.clear();
 
             if (!skipGC()) {
                 System.gc();
             }
 
+            monitoringActive.set(true);
             final long start = System.nanoTime();
-            t0.start();
-            t1.start();
-            try {
-                t0.join();
-                t1.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new TornadoRuntimeException(e);
-            }
+            runBenchmark(device);
             final long end = System.nanoTime();
+            monitoringActive.set(false);
 
             if (isProfilerEnabled) {
-                // Ensure the execution was correct, so we can count for general stats.
                 TornadoProfilerResult profilerResult = getExecutionResult().getProfilerResult();
                 if (profilerResult.getDeviceKernelTime() != 0) {
                     deviceKernelTimers.add(profilerResult.getDeviceKernelTime());
@@ -231,15 +228,24 @@ public abstract class BenchmarkDriver {
             }
 
             timers[toIntExact(i)] = (end - start);
-            Long metric = calculateTotalEnergy(start);
-            if (metric > 0) {
-                totalEnergyMetrics.add(metric);
-                firstPowerMetricPerIteration.add(powerMetricsPerIteration.getFirst());
-                averagePowerMetricPerIteration.add((long) getAverage(toArray(powerMetricsPerIteration)));
-                lastPowerMetricPerIteration.add(powerMetricsPerIteration.getLast());
+
+            // Only if we have collected data
+            if (!currentPowerMetrics.isEmpty()) {
+                long totalEnergy = calculateTotalEnergy(start, currentPowerMetrics, currentTimeMetrics); // your existing method
+                if (totalEnergy > 0) {
+                    totalEnergyMetrics.add(totalEnergy);
+                    firstPowerMetricPerIteration.add(currentPowerMetrics.get(0));
+                    averagePowerMetricPerIteration.add((long) getAverage(toArray(currentPowerMetrics)));
+                    lastPowerMetricPerIteration.add(currentPowerMetrics.get(currentPowerMetrics.size() - 1));
+                }
             }
         }
+
+        monitorTask.cancel(true); // Stop the scheduled monitoring task
+        monitorExecutor.shutdown();
+
         barrier();
+
         if (!DUMP_ENERGY_METRICS_TO_DIRECTORY.isEmpty()) {
             writeToCsv(id, device);
             writePowerMetricsToCsv(id, device);
@@ -250,6 +256,9 @@ public abstract class BenchmarkDriver {
         }
 
         tearDown();
+        if (isEnergyMonitorIntervalValid()) {
+            runtime.shutdown();
+        }
     }
 
     public double getMin(double[] arr) {
@@ -426,19 +435,19 @@ public abstract class BenchmarkDriver {
         return String.format("average(ns)=%6e, median(ns)=%6e, firstIteration(ns)=%6e, best(ns)=%6e%n", getAverage(), getMedian(), getFirstIteration(), getBestExecution());
     }
 
-    private Long calculateTotalEnergy(long startTime) {
+    private Long calculateTotalEnergy(long startTime, List<Long> currentPowerMetrics, List<Long> currentTimeMetrics) {
         long totalEnergyMicroJoules = 0;
 
-        if (snapshotTimerPerIteration.size() == powerMetricsPerIteration.size() && snapshotTimerPerIteration.size() > 0) {
-            long timeIntervalNs = snapshotTimerPerIteration.get(0) - startTime;
-            long energyForIntervalMicroJoules = (timeIntervalNs * powerMetricsPerIteration.get(0)) / 1000;
+        if (currentTimeMetrics.size() == currentPowerMetrics.size() && currentTimeMetrics.size() > 0) {
+            long timeIntervalNs = currentTimeMetrics.get(0) - startTime;
+            long energyForIntervalMicroJoules = (timeIntervalNs * currentPowerMetrics.get(0)) / 1000;
             totalEnergyMicroJoules += energyForIntervalMicroJoules;
-            for (int i = 0; i < snapshotTimerPerIteration.size() - 1; i++) {
-                timeIntervalNs = snapshotTimerPerIteration.get(i + 1) - snapshotTimerPerIteration.get(i);
-                energyForIntervalMicroJoules = (timeIntervalNs * powerMetricsPerIteration.get(i)) / 1000;
+            for (int i = 0; i < currentTimeMetrics.size() - 1; i++) {
+                timeIntervalNs = currentTimeMetrics.get(i + 1) - currentTimeMetrics.get(i);
+                energyForIntervalMicroJoules = (timeIntervalNs * currentPowerMetrics.get(i)) / 1000;
                 totalEnergyMicroJoules += energyForIntervalMicroJoules;
             }
-        } else if (snapshotTimerPerIteration.size() != powerMetricsPerIteration.size()) {
+        } else if (currentTimeMetrics.size() != currentPowerMetrics.size()) {
             throw new IllegalArgumentException("All lists must have the same size.");
         }
 
