@@ -37,6 +37,7 @@ public abstract class BenchmarkRunner {
     private static final boolean SKIP_SERIAL = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipserial", FALSE));
     private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", TRUE));
     private static final String STORE_OUTPUT_TO_FILE = System.getProperty("tornado.benchmarks.store.output.to.file", "");
+    private static final long DELAY_INTERVAL = Long.parseLong(System.getProperty("delay.interval", "30000"));
 
     protected abstract String getName();
 
@@ -185,6 +186,11 @@ public abstract class BenchmarkRunner {
                 if (isPowerMonitoringEnabled()) {
                     stringBuilder.append("Energy: bm=" + id + ", " + "id=" + driverIndex + ":" + deviceIndex + ", " + benchmarkDriver.getEnergySummary() + "\n");
                 }
+            }
+            try {
+                Thread.sleep(DELAY_INTERVAL);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
         if (STORE_OUTPUT_TO_FILE.isEmpty()) {
