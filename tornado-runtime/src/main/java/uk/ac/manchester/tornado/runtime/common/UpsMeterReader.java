@@ -45,6 +45,8 @@ public class UpsMeterReader {
 
     private static String addressString = TornadoOptions.UPS_IP_ADDRESS;
 
+    private static String latestPowerValue;
+
     // Single shared SNMP components
     private static Snmp snmp;
     private static CommunityTarget target;
@@ -85,9 +87,10 @@ public class UpsMeterReader {
             ResponseEvent response = snmp.get(pdu, target);
 
             if (response != null && response.getResponse() != null) {
-                return response.getResponse().get(0).getVariable().toString();
+                latestPowerValue = response.getResponse().get(0).getVariable().toString();
+                return latestPowerValue;
             } else {
-                System.err.println("Error: No response from SNMP agent.");
+                return (latestPowerValue != null) ? latestPowerValue : "0";
             }
         } catch (Exception e) {
             System.err.println("Error in SNMP GET: " + e.getMessage());
