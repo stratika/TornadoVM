@@ -202,6 +202,7 @@ public abstract class BenchmarkDriver {
 
         for (long i = 0; i < iterations; i++) {
             currentPowerMetrics.clear(); // Clear previous iteration's samples
+            currentTimeMetrics.clear();
 
             if (!skipGC()) {
                 System.gc();
