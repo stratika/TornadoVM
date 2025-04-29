@@ -192,8 +192,11 @@ public abstract class BenchmarkDriver {
 
         ScheduledFuture<?> monitorTask = monitorExecutor.scheduleAtFixedRate(() -> {
             if (monitoringActive.get()) {
-                currentPowerMetrics.add(runtime.getPowerMetric());
-                currentTimeMetrics.add(System.nanoTime());
+                Long powerMetric = runtime.getPowerMetric();
+                if (powerMetric != -1) {
+                    currentPowerMetrics.add(powerMetric);
+                    currentTimeMetrics.add(System.nanoTime());
+                }
             }
         }, 0, ENERGY_MONITOR_INTERVAL, TimeUnit.MILLISECONDS);
 
