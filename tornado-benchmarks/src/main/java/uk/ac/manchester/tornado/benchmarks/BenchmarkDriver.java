@@ -61,7 +61,7 @@ public abstract class BenchmarkDriver {
     private List<Long> deviceCopyOut;
     private List<Long> totalEnergyMetrics;
     private List<Long> firstPowerMetricPerIteration;
-    private List<Long> averagePowerMetricPerIteration;
+    private List<Long> medianPowerMetricPerIteration;
     private List<Long> lastPowerMetricPerIteration;
 
     private int startingIndex = 30;
@@ -180,7 +180,7 @@ public abstract class BenchmarkDriver {
         }
         totalEnergyMetrics = new ArrayList<>();
         firstPowerMetricPerIteration = new ArrayList<>();
-        averagePowerMetricPerIteration = new ArrayList<>();
+        medianPowerMetricPerIteration = new ArrayList<>();
         lastPowerMetricPerIteration = new ArrayList<>();
 
         // Setup for power monitoring
@@ -241,7 +241,7 @@ public abstract class BenchmarkDriver {
                 if (totalEnergy > 0) {
                     totalEnergyMetrics.add(totalEnergy);
                     firstPowerMetricPerIteration.add(currentPowerMetrics.get(0));
-                    averagePowerMetricPerIteration.add((long) getAverage(toArray(currentPowerMetrics)));
+                    medianPowerMetricPerIteration.add((long) getMedian(toArray(currentPowerMetrics)));
                     lastPowerMetricPerIteration.add(currentPowerMetrics.get(currentPowerMetrics.size() - 1));
                 }
             }
@@ -360,8 +360,8 @@ public abstract class BenchmarkDriver {
         String fileName = "first_power_metrics_" + formatFileNameSuffix(id, device);
         writeListToCSV(firstPowerMetricPerIteration, fileName, id);
 
-        fileName = "average_power_metrics_" + formatFileNameSuffix(id, device);
-        writeListToCSV(averagePowerMetricPerIteration, fileName, id);
+        fileName = "median_power_metrics_" + formatFileNameSuffix(id, device);
+        writeListToCSV(medianPowerMetricPerIteration, fileName, id);
 
         fileName = "last_power_metrics_" + formatFileNameSuffix(id, device);
         writeListToCSV(lastPowerMetricPerIteration, fileName, id);
@@ -402,8 +402,8 @@ public abstract class BenchmarkDriver {
         return (totalEnergyMetrics.size() > 0) ? totalEnergyMetrics.getFirst() : -1;
     }
 
-    public long getAverageEnergyMetric() {
-        return (totalEnergyMetrics.size() > 0) ? (long) getAverage(toArray(totalEnergyMetrics)) : 0;
+    public long getMedianEnergyMetric() {
+        return (totalEnergyMetrics.size() > 0) ? (long) getMedian(toArray(totalEnergyMetrics)) : 0;
     }
 
     public long getLowestEnergyMetric() {
@@ -463,7 +463,7 @@ public abstract class BenchmarkDriver {
     }
 
     public String getEnergySummary() {
-        return String.format("firstIteration(mJ)=%d, lowestEnergy(mJ)=%d, averageEnergy(mJ)=%d, highestEnergy(mJ)=%d%n", getFirstEnergyMetric(), getLowestEnergyMetric(), getAverageEnergyMetric(),
+        return String.format("firstIteration(mJ)=%d, lowestEnergy(mJ)=%d, medianEnergy(mJ)=%d, highestEnergy(mJ)=%d%n", getFirstEnergyMetric(), getLowestEnergyMetric(), getMedianEnergyMetric(),
                 getHighestEnergyMetric());
     }
 
