@@ -64,7 +64,7 @@ public class UpsMeterReader {
                 target.setCommunity(new OctetString(COMMUNITY));
                 target.setAddress(address);
                 target.setRetries(2);
-                target.setTimeout(1500);
+                target.setTimeout(200);
                 target.setVersion(SNMP_VERSION);
             } else {
                 System.err.println("Error: UPS IP address not set.");
@@ -90,7 +90,7 @@ public class UpsMeterReader {
                 latestPowerValue = response.getResponse().get(0).getVariable().toString();
                 return latestPowerValue;
             } else {
-                return (latestPowerValue != null) ? latestPowerValue : "0";
+                return (latestPowerValue != null) ? latestPowerValue : "-1";
             }
         } catch (Exception e) {
             System.err.println("Error in SNMP GET: " + e.getMessage());
