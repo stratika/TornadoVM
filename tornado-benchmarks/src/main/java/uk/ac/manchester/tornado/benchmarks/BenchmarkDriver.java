@@ -213,9 +213,9 @@ public abstract class BenchmarkDriver {
             runBenchmark(device);
             final long end = System.nanoTime();
             monitoringActive.set(false);
-            // Sleep for 1 millisecond to ensure that monitoring thread will see the flag.
+            // Sleep for the used interval to ensure that monitoring thread will see the flag.
             try {
-                Thread.sleep(1);
+                Thread.sleep(ENERGY_MONITOR_INTERVAL);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -416,19 +416,22 @@ public abstract class BenchmarkDriver {
     }
 
     public long getFirstEnergyMetric() {
-        return (totalEnergyMetrics.size() > 0) ? totalEnergyMetrics.getFirst() : -1;
+        return totalEnergyMetrics.stream().filter(e -> e > 0).findFirst().orElse(-1L);
     }
 
     public long getMedianEnergyMetric() {
-        return (totalEnergyMetrics.size() > 0) ? (long) getMedian(toArray(totalEnergyMetrics)) : 0;
+        List<Long> nonZero = totalEnergyMetrics.stream().filter(e -> e > 0).toList();
+        return nonZero.isEmpty() ? 0 : (long) getMedian(toArray(nonZero));
     }
 
     public long getLowestEnergyMetric() {
-        return (totalEnergyMetrics.size() > 0) ? (long) getMin(toArray(totalEnergyMetrics)) : 0;
+        List<Long> nonZero = totalEnergyMetrics.stream().filter(e -> e > 0).toList();
+        return nonZero.isEmpty() ? 0 : (long) getMin(toArray(nonZero));
     }
 
     public long getHighestEnergyMetric() {
-        return (totalEnergyMetrics.size() > 0) ? (long) getMax(toArray(totalEnergyMetrics)) : 0;
+        List<Long> nonZero = totalEnergyMetrics.stream().filter(e -> e > 0).toList();
+        return nonZero.isEmpty() ? 0 : (long) getMax(toArray(nonZero));
     }
 
     public double getVariance() {
