@@ -447,23 +447,30 @@ public abstract class BenchmarkDriver {
     }
 
     private Long calculateTotalEnergy(long startTime, List<Long> currentPowerMetrics, List<Long> currentTimeMetrics) {
-        int size = Math.min(currentPowerMetrics.size(), currentTimeMetrics.size());
+        List<Long> power;
+        List<Long> time;
+
+        synchronized (currentPowerMetrics) {
+            power = new ArrayList<>(currentPowerMetrics);
+        }
+
+        synchronized (currentTimeMetrics) {
+            time = new ArrayList<>(currentTimeMetrics);
+        }
+
+        int size = Math.min(power.size(), time.size());
 
         if (size == 0) {
             System.err.println("No valid power or time samples collected. Try to increase the number of iterations.");
             return 0L;
         }
 
-        List<Long> power = currentPowerMetrics.subList(0, size);
-        List<Long> time = currentTimeMetrics.subList(0, size);
         long totalEnergyMicroJoules = 0;
 
-        // First interval: from start to first timestamp
         long timeIntervalNs = time.get(0) - startTime;
         long energyForInterval = (timeIntervalNs * power.get(0)) / 1000;
         totalEnergyMicroJoules += energyForInterval;
 
-        // Intermediate intervals
         for (int i = 0; i < size - 1; i++) {
             timeIntervalNs = time.get(i + 1) - time.get(i);
             energyForInterval = (timeIntervalNs * power.get(i)) / 1000;
