@@ -220,14 +220,6 @@ public abstract class BenchmarkDriver {
                 Thread.currentThread().interrupt();
             }
 
-            if (currentPowerMetrics.isEmpty()) {
-                long postBenchmarkPower = runtime.getPowerMetric();
-                if (postBenchmarkPower != -1) {
-                    currentPowerMetrics.add(postBenchmarkPower);
-                    currentTimeMetrics.add(System.nanoTime());
-                }
-            }
-
             if (isProfilerEnabled) {
                 TornadoProfilerResult profilerResult = getExecutionResult().getProfilerResult();
                 if (profilerResult.getDeviceKernelTime() != 0) {
@@ -242,10 +234,8 @@ public abstract class BenchmarkDriver {
             }
 
             timers[toIntExact(i)] = (end - start);
-            long durationNs = end - start;
 
-            // Use full integration if duration is long enough
-            if (durationNs >= 50_000_000L && !currentPowerMetrics.isEmpty() && currentPowerMetrics.size() == currentTimeMetrics.size()) {
+            if (!currentPowerMetrics.isEmpty()) {
                 long totalEnergy = calculateTotalEnergy(start, currentPowerMetrics, currentTimeMetrics);
                 if (totalEnergy > 0) {
                     totalEnergyMetrics.add(totalEnergy);
@@ -253,14 +243,6 @@ public abstract class BenchmarkDriver {
                     medianPowerMetricPerIteration.add((long) getMedian(toArray(currentPowerMetrics)));
                     lastPowerMetricPerIteration.add(currentPowerMetrics.get(currentPowerMetrics.size() - 1));
                 }
-            } else {
-                // Heuristic fallback: median power × duration
-                long medianPower = currentPowerMetrics.isEmpty() ? 0 : (long) getMedian(toArray(currentPowerMetrics));
-                long estimatedEnergyMicroJoules = (durationNs * medianPower) / 1000; // ns × µW = pJ → µJ
-                totalEnergyMetrics.add(estimatedEnergyMicroJoules / 1000); // to mJ
-                firstPowerMetricPerIteration.add(medianPower);
-                medianPowerMetricPerIteration.add(medianPower);
-                lastPowerMetricPerIteration.add(medianPower);
             }
         }
 
