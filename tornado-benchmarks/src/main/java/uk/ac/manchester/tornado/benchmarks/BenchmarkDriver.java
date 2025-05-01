@@ -447,20 +447,27 @@ public abstract class BenchmarkDriver {
     }
 
     private Long calculateTotalEnergy(long startTime, List<Long> currentPowerMetrics, List<Long> currentTimeMetrics) {
+        int size = Math.min(currentPowerMetrics.size(), currentTimeMetrics.size());
+
+        if (size == 0) {
+            System.err.println("No valid power or time samples collected. Try to increase the number of iterations.");
+            return 0L;
+        }
+
+        List<Long> power = currentPowerMetrics.subList(0, size);
+        List<Long> time = currentTimeMetrics.subList(0, size);
         long totalEnergyMicroJoules = 0;
 
-        if (currentTimeMetrics.size() == currentPowerMetrics.size() && currentTimeMetrics.size() > 0) {
-            long timeIntervalNs = currentTimeMetrics.get(0) - startTime;
-            long energyForIntervalMicroJoules = (timeIntervalNs * currentPowerMetrics.get(0)) / 1000;
-            totalEnergyMicroJoules += energyForIntervalMicroJoules;
-            for (int i = 0; i < currentTimeMetrics.size() - 1; i++) {
-                timeIntervalNs = currentTimeMetrics.get(i + 1) - currentTimeMetrics.get(i);
-                energyForIntervalMicroJoules = (timeIntervalNs * currentPowerMetrics.get(i)) / 1000;
-                totalEnergyMicroJoules += energyForIntervalMicroJoules;
-            }
-        } else if (currentTimeMetrics.size() != currentPowerMetrics.size()) {
-            throw new IllegalArgumentException("All lists must have the same size. currentTimeMetrics.size(): " + currentTimeMetrics.size() + ", currentPowerMetrics.size(): " + currentPowerMetrics
-                    .size());
+        // First interval: from start to first timestamp
+        long timeIntervalNs = time.get(0) - startTime;
+        long energyForInterval = (timeIntervalNs * power.get(0)) / 1000;
+        totalEnergyMicroJoules += energyForInterval;
+
+        // Intermediate intervals
+        for (int i = 0; i < size - 1; i++) {
+            timeIntervalNs = time.get(i + 1) - time.get(i);
+            energyForInterval = (timeIntervalNs * power.get(i)) / 1000;
+            totalEnergyMicroJoules += energyForInterval;
         }
 
         return totalEnergyMicroJoules / 1000;
