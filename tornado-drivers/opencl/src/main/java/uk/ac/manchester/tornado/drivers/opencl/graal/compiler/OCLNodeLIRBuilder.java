@@ -723,34 +723,60 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             append(new OCLLIRStmt.MarkRelocateInstruction());
         }
 
-        // If the EndNode is a merge block and the next node is ReturnNode, it should emit a ReturnNode.
+        handleMergeAtEnd(end, curBlock);
+    }
+
+    /**
+     * Handles phi moves at a merge reachable from {@code end}. If the merge is immediately followed by
+     * a {@link ReturnNode} and the surrounding CFG matches a specific if-structure, this emits a direct
+     * return instead of the usual phi moves.
+     */
+    private void handleMergeAtEnd(final AbstractEndNode end, final HIRBlock curBlock) {
         final AbstractMergeNode merge = end.merge();
-        // If the next node of a merge block is ReturnNode
+        if (merge == null) {
+            return; // Nothing to do without a merge
+        }
+
+        // Fast path: merge immediately followed by a ReturnNode
         if (merge instanceof MergeNode && merge.next() instanceof ReturnNode) {
-            HIRBlock pdom2 = curBlock.getDominator(2);
-            HIRBlock predecessorBlock = curBlock.getFirstPredecessor();
-            if (pdom2 != null && predecessorBlock != null) {
-                if (blockContainsIfNode(predecessorBlock) && blockContainsIfNode(pdom2)) {
-                    if (getFirstNode(pdom2, IfNode.class).trueSuccessor() == getFirstNode(predecessorBlock, BeginNode.class)) {
-                        gen.emitReturn(null, null);
-                    } else {
-                        for (ValuePhiNode phi : merge.valuePhis()) {
-                            final ValueNode value = phi.valueAt(end);
-                            if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
-                                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                                append(new OCLLIRStmt.AssignStmt(result, operand(value)));
-                            }
-                        }
-                    }
+            final HIRBlock pdom2 = curBlock.getDominator(2);
+            final HIRBlock predecessorBlock = curBlock.getFirstPredecessor();
+
+            if (pdom2 != null && predecessorBlock != null && blockContainsIfNode(predecessorBlock) && blockContainsIfNode(pdom2)) {
+
+                // If the true-successor of the outer-if (pdom2) leads to the predecessor's Begin,
+                // we can directly emit a return and skip materializing phi moves here.
+                final IfNode outerIf = getFirstNode(pdom2, IfNode.class);
+                final BeginNode predBegin = getFirstNode(predecessorBlock, BeginNode.class);
+
+                if (outerIf.trueSuccessor() == predBegin) {
+                    gen.emitReturn(null, null);
+                    return;
                 }
             }
-        } else {
-            for (ValuePhiNode phi : merge.valuePhis()) {
-                final ValueNode value = phi.valueAt(end);
-                if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
-                    final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                    append(new OCLLIRStmt.AssignStmt(result, operand(value)));
-                }
+
+            // Fall through to normal phi emission if the special pattern doesn't match.
+            emitNonLoopPhiMoves(merge, end);
+            return;
+        }
+
+        // General case: merge not followed by ReturnNode
+        emitNonLoopPhiMoves(merge, end);
+    }
+
+    /**
+     * Emits assign statements for non-loop phis at {@code merge} using the value incoming along {@code end}.
+     * Skips loop header phis and collapsible phis.
+     */
+    private void emitNonLoopPhiMoves(final AbstractMergeNode merge, final AbstractEndNode end) {
+        for (ValuePhiNode phi : merge.valuePhis()) {
+            final ValueNode value = phi.valueAt(end);
+
+            // (!loopPhi && not collapsible) || (value is a non-loop Phi needing a move)
+            if (((!phi.isLoopPhi()) && (phi.singleValueOrThis() == phi)) || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
+
+                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
+                append(new OCLLIRStmt.AssignStmt(result, operand(value)));
             }
         }
     }
