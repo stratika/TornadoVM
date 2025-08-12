@@ -55,6 +55,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.EndNode;
@@ -68,9 +69,11 @@ import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
+import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.SafepointNode;
 import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -720,14 +723,58 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             append(new OCLLIRStmt.MarkRelocateInstruction());
         }
 
+        // If the EndNode is a merge block and the next node is ReturnNode, it should emit a ReturnNode.
         final AbstractMergeNode merge = end.merge();
-        for (ValuePhiNode phi : merge.valuePhis()) {
-            final ValueNode value = phi.valueAt(end);
-            if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
-                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
-                append(new OCLLIRStmt.AssignStmt(result, operand(value)));
+        // If the next node of a merge block is ReturnNode
+        if (merge instanceof MergeNode && merge.next() instanceof ReturnNode) {
+            HIRBlock pdom2 = curBlock.getDominator(2);
+            HIRBlock predecessorBlock = curBlock.getFirstPredecessor();
+            if (pdom2 != null && predecessorBlock != null) {
+                if (blockContainsIfNode(predecessorBlock) && blockContainsIfNode(pdom2)) {
+                    if (getFirstNode(pdom2, IfNode.class).trueSuccessor() == getFirstNode(predecessorBlock, BeginNode.class)) {
+                        gen.emitReturn(null, null);
+                    } else {
+                        for (ValuePhiNode phi : merge.valuePhis()) {
+                            final ValueNode value = phi.valueAt(end);
+                            if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
+                                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
+                                append(new OCLLIRStmt.AssignStmt(result, operand(value)));
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for (ValuePhiNode phi : merge.valuePhis()) {
+                final ValueNode value = phi.valueAt(end);
+                if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
+                    final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
+                    append(new OCLLIRStmt.AssignStmt(result, operand(value)));
+                }
             }
         }
+    }
+
+    private boolean blockContainsIfNode(HIRBlock block) {
+        boolean hasIfNode = false;
+        if (block != null) {
+            for (FixedNode n : block.getNodes()) {
+                if (n instanceof IfNode) {
+                    hasIfNode = true;
+                    break;
+                }
+            }
+        }
+        return hasIfNode;
+    }
+
+    private static <T extends FixedNode> T getFirstNode(HIRBlock block, Class<T> type) {
+        for (FixedNode n : block.getNodes()) {
+            if (type.isInstance(n)) {
+                return type.cast(n);
+            }
+        }
+        return null;
     }
 
     public Value operandForPhi(ValuePhiNode phi) {
