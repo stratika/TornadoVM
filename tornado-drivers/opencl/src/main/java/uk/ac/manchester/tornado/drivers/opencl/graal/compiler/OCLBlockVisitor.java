@@ -354,7 +354,14 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                 }
             }
         } else {
-            closeBlock(block);
+            // For LoopEnd blocks (not LoopExit), emit closing brace WITHOUT popping indent
+            // The LoopPostOp's beginScope() pushed indent, but nested blocks within the loop
+            // have already managed their scopes back to the loop body level
+            // Emitting at current indent closes the loop at the correct level
+            if (openBlocks.getOrDefault(block, false) && !wasBlockAlreadyClosed(block)) {
+                asm.emitLine(OCLAssemblerConstants.CURLY_BRACKET_CLOSE + "  // " + block);
+                markBlockClosed(block);
+            }
             incrementClosedLoops(loopBeginBlock);
         }
     }
@@ -414,6 +421,9 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                 }
             } else {
                 closeScope(block, loopBeginBlock);
+                // Return early to prevent duplicate closing logic below
+                openclBuilder.emitRelocatedInstructions(block);
+                return;
             }
         }
 
