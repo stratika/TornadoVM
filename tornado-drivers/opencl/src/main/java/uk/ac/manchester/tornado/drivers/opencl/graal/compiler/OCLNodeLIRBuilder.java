@@ -745,12 +745,14 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             if (pdom2 != null && predecessorBlock != null && blockContainsIfNode(predecessorBlock) && blockContainsIfNode(pdom2)) {
 
                 // If the true-successor of the outer-if (pdom2) leads to the predecessor's Begin,
-                // we can directly emit a return and skip materializing phi moves here.
+                // skip emitting bare return - causes issues with non-void functions.
+                // The phi moves will handle the proper return value.
                 final IfNode outerIf = getFirstNode(pdom2, IfNode.class);
                 final BeginNode predBegin = getFirstNode(predecessorBlock, BeginNode.class);
 
                 if (outerIf.trueSuccessor() == predBegin) {
-                    gen.emitReturn(null, null);
+                    // Skip bare return emission
+                    emitNonLoopPhiMoves(merge, end);
                     return;
                 }
             }

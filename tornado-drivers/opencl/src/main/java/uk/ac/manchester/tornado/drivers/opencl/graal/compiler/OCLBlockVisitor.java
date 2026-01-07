@@ -263,8 +263,20 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                  */
                 HIRBlock[] successors = IntStream.range(0, block.getDominator().getSuccessorCount()).mapToObj(i -> block.getDominator().getSuccessorAt(i)).toArray(HIRBlock[]::new);
 
-                for (int index = 0; index < successors.length; index++) {
-                    closeBlock(successors[index]);
+                // Check if one of the successors IS a LoopExitNode (has a break statement)
+                boolean hasBreakInSuccessors = false;
+                for (HIRBlock successor : successors) {
+                    if (successor.getBeginNode() instanceof LoopExitNode) {
+                        hasBreakInSuccessors = true;
+                        break;
+                    }
+                }
+
+                // Only skip closing all successors if one branch has a break
+                if (!hasBreakInSuccessors) {
+                    for (int index = 0; index < successors.length; index++) {
+                        closeBlock(successors[index]);
+                    }
                 }
             } else if (isIfBlock(block.getDominator())) {
                 IfNode ifNode = (IfNode) block.getDominator().getEndNode();
