@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -96,7 +97,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     public OCLCompilationResultBuilder(CodeGenProviders providers, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext, OptionValues options, DebugContext debug,
             CompilationResult compilationResult, LIR lir) {
         super(providers, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, Register.None, EconomicMap.create(Equivalence.DEFAULT), NO_VERIFIERS, lir);
-        nonInlinedMethods = new HashSet<ResolvedJavaMethod>();
+        nonInlinedMethods = new LinkedHashSet<ResolvedJavaMethod>();
     }
 
     private static boolean isMergeHIRBlock(HIRBlock block) {
