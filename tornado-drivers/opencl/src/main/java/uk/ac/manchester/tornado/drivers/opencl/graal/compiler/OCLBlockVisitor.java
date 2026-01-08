@@ -215,6 +215,16 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
 
     private void closeBlock(HIRBlock block) {
         if (openBlocks.getOrDefault(block, false) && !wasBlockAlreadyClosed(block)) {
+            boolean isMergeNode = block.getBeginNode() instanceof MergeNode;
+            // MergeNodes that will be merged into a LoopEnd block should not emit closing braces
+            // because they never emitted opening braces in enter()
+            if (isMergeNode && !block.isLoopHeader()) {
+                // Check if this MergeNode's postdominator is a LoopEnd block
+                HIRBlock pdom = block.getPostdominator();
+                if (pdom != null && pdom.isLoopEnd()) {
+                    return;
+                }
+            }
             asm.endScope(block.toString());
             markBlockClosed(block);
         }
