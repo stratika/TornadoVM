@@ -738,21 +738,25 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
 
         // Fast path: merge immediately followed by a ReturnNode
-        if (merge instanceof MergeNode && merge.next() instanceof ReturnNode) {
+        if (merge instanceof MergeNode && merge.next() instanceof ReturnNode returnNode) {
             final HIRBlock pdom2 = curBlock.getDominator(2);
             final HIRBlock predecessorBlock = curBlock.getFirstPredecessor();
 
             if (pdom2 != null && predecessorBlock != null && blockContainsIfNode(predecessorBlock) && blockContainsIfNode(pdom2)) {
 
                 // If the true-successor of the outer-if (pdom2) leads to the predecessor's Begin,
-                // skip emitting bare return - causes issues with non-void functions.
-                // The phi moves will handle the proper return value.
+                // emit appropriate code based on whether this is a void or non-void function.
                 final IfNode outerIf = getFirstNode(pdom2, IfNode.class);
                 final BeginNode predBegin = getFirstNode(predecessorBlock, BeginNode.class);
 
                 if (outerIf.trueSuccessor() == predBegin) {
-                    // Skip bare return emission
-                    emitNonLoopPhiMoves(merge, end);
+                    // For void functions, emit a direct return
+                    // For non-void functions, emit phi moves to handle the return value
+                    if (returnNode.result() == null) {
+                        gen.emitReturn(null, null);
+                    } else {
+                        emitNonLoopPhiMoves(merge, end);
+                    }
                     return;
                 }
             }
