@@ -259,7 +259,9 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                     closeBlock(block);
                 }
             }
-        } else if ((pdom.getBeginNode() instanceof MergeNode) && (block.getDominator() != null && isIfBlock(block.getDominator()))) {
+        }
+
+        if ((pdom.getBeginNode() instanceof MergeNode) && (block.getDominator() != null && isIfBlock(block.getDominator()))) {
             /*
              * If the post-dominator is a MergeNode and the dominator of the current block
              * is an if-condition, then we generate the end-scope if we are also inside
@@ -273,12 +275,21 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                  */
                 HIRBlock[] successors = IntStream.range(0, block.getDominator().getSuccessorCount()).mapToObj(i -> block.getDominator().getSuccessorAt(i)).toArray(HIRBlock[]::new);
 
-                // Close each successor individually, but skip successors that are LoopExitNodes
-                for (HIRBlock successor : successors) {
-                    // Skip closing LoopExitNode successors (break statements)
-                    if (!(successor.getBeginNode() instanceof LoopExitNode)) {
-                        closeBlock(successor);
-                    }
+                // Find the OTHER successor (not the current block)
+                int index = 0;
+                if (successors[index] == block) {
+                    index = 1;
+                }
+
+                // If the current block is a merge-block, and the block does not correspond with
+                // any of the if-branches of the dominator, then we do not need the close-bracket.
+                if (successors[index] != block && block.getBeginNode() instanceof MergeNode) {
+                    return;
+                }
+
+                // If the other successor is not a LoopExitNode, close the current block
+                if (!(successors[index].getBeginNode() instanceof LoopExitNode)) {
+                    closeBlock(block);
                 }
             } else if (isIfBlock(block.getDominator())) {
                 IfNode ifNode = (IfNode) block.getDominator().getEndNode();
