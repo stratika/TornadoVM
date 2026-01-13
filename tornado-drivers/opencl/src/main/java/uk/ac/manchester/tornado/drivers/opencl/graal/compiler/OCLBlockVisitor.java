@@ -225,6 +225,36 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                     return;
                 }
             }
+
+            // Special case: LoopExitNodes are used to close loops and need closing braces
+            // even though they don't have their own opening braces
+            boolean isLoopExitNode = block.getBeginNode() instanceof LoopExitNode;
+
+            // Check if this block actually had an opening brace emitted in enter()
+            // A block has an opening brace if it's a loop header, or if its dominator
+            // emitted an ELSE/SWITCH opening brace for it, OR if it's a LoopExitNode
+            // This logic must match exactly what happens in enter()
+            boolean hadOpeningBrace = false;
+            if (block.isLoopHeader()) {
+                // Loop headers have opening braces emitted by LIR (LoopPostOp)
+                hadOpeningBrace = true;
+            } else if (isLoopExitNode) {
+                // LoopExitNodes close the loop they exit from
+                hadOpeningBrace = true;
+            } else {
+                // Check if enter() called emitBeginBlockForElseStatement or emitBeginBlockForSwitchStatements
+                // This happens when: dom != null && !isMerge && !dom.isLoopHeader() && (isIfBlock(dom) || isSwitchBlock(dom))
+                HIRBlock dom = block.getDominator();
+                if (dom != null && !isMergeNode && !dom.isLoopHeader() && (isIfBlock(dom) || isSwitchBlock(dom))) {
+                    hadOpeningBrace = true;
+                }
+            }
+
+            if (!hadOpeningBrace) {
+                // Skip closing brace if no opening brace was emitted
+                return;
+            }
+
             asm.endScope(block.toString());
             markBlockClosed(block);
         }
@@ -346,7 +376,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
 
     private void closeScope(HIRBlock block, HIRBlock loopBeginBlock) {
         if (block.getBeginNode() instanceof LoopExitNode) {
-            if (!(block.getDominator().getDominator() != null && block.getDominator().getDominator().getBeginNode() instanceof MergeNode)) {
+            boolean skipClose = block.getDominator().getDominator() != null && block.getDominator().getDominator().getBeginNode() instanceof MergeNode;
+            if (!skipClose) {
                 /*
                  * Only close scope if the loop-exit node does not depend on a merge node. In
                  * such case, the merge will generate the correct close scope.
@@ -452,7 +483,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRBlo
                 if (!(pdom.getBeginNode() instanceof MergeNode && merges.contains(block) && block.getPredecessorCount() > 2)) {
                     // We need to check that none of the blocks reachable from dominators has been
                     // already closed.
-                    if (!wasLoopBlockAlreadyClosed(block) && !(!isComplexLoopCondition(block) && isBlockInABreak(block))) {
+                    if (!wasLoopBlockAlreadyClosed(block) && !wasBlockAlreadyClosed(block) && !(!isComplexLoopCondition(block) && isBlockInABreak(block))) {
                         if (!(rmvEndBracket.contains(block))) {
                             closeBlock(block);
                         }
