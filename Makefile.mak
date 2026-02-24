@@ -7,8 +7,8 @@ BACKEND = opencl
 build jdk21:
 	python bin\compile --jdk jdk21 --backend $(BACKEND)
 
-rebuild-deps-jdk21:
-	python bin\compile --jdk jdk21 --rebuild --backend $(BACKEND)
+rebuild-deps:
+	python bin\compile --jdk graal-jdk-21 --rebuild --backend $(BACKEND)
 
 graal-jdk-21:
 	python bin\compile --jdk graal-jdk-21 --backend $(BACKEND)
@@ -26,10 +26,10 @@ mvn-single-threaded-polyglot:
 	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
 
 ptx:
-	python bin\compile --jdk jdk21 --backend ptx,opencl
+	python bin\compile --jdk graal-jdk-21 --backend ptx,opencl
 
 spirv:
-	python bin\compile --jdk jdk21 --backend spirv,ptx,opencl
+	python bin\compile --jdk graal-jdk-21 --backend spirv,ptx,opencl
 
 sdk:
 	python bin\compile --jdk jdk21 --sdk --backend $(BACKEND)
