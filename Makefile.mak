@@ -4,35 +4,35 @@ all: build
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
-build jdk25:
-	python bin\compile --jdk jdk25 --backend $(BACKEND)
+build jdk21:
+	python bin\compile --jdk jdk21 --backend $(BACKEND)
 
-rebuild-deps-jdk25:
-	python bin\compile --jdk jdk25 --rebuild --backend $(BACKEND)
+rebuild-deps-jdk21:
+	python bin\compile --jdk jdk21 --rebuild --backend $(BACKEND)
 
-graal-jdk-25:
-	python bin\compile --jdk graal-jdk-25 --backend $(BACKEND)
+graal-jdk-21:
+	python bin\compile --jdk graal-jdk-21 --backend $(BACKEND)
 
 polyglot:
-	python bin\compile --jdk graal-jdk-25 --backend $(BACKEND) --polyglot
+	python bin\compile --jdk graal-jdk-21 --backend $(BACKEND) --polyglot
 
-mvn-single-threaded-jdk25:
-	python bin/compile --jdk jdk25 --backend $(BACKEND) --mvn_single_threaded
+mvn-single-threaded-jdk21:
+	python bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
 
-mvn-single-threaded-graal-jdk-25:
-	python bin/compile --jdk graal-jdk-25 --backend $(BACKEND) --mvn_single_threaded
+mvn-single-threaded-graal-jdk-21:
+	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded
 
 mvn-single-threaded-polyglot:
-	python bin/compile --jdk graal-jdk-25 --backend $(BACKEND) --mvn_single_threaded --polyglot
+	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded --polyglot
 
 ptx:
-	python bin\compile --jdk jdk25 --backend ptx,opencl
+	python bin\compile --jdk jdk21 --backend ptx,opencl
 
 spirv:
-	python bin\compile --jdk jdk25 --backend spirv,ptx,opencl
+	python bin\compile --jdk jdk21 --backend spirv,ptx,opencl
 
 sdk:
-	python bin\compile --jdk jdk25 --sdk --backend $(BACKEND)
+	python bin\compile --jdk jdk21 --sdk --backend $(BACKEND)
 
 # Variable passed for the preparation of the Xilinx FPGA emulated target device. The default device is `xilinx_u50_gen3x16_xdma_201920_3`.
 # make xilinx_emulation FPGA_PLATFORM=<platform_name> NUM_OF_FPGA_DEVICES=<number_of_devices>
