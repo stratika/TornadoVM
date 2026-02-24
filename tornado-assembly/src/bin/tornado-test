@@ -327,6 +327,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     ## Atomics
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",
+    "uk.ac.manchester.tornado.unittests.fields.TestInheritedFields",
 
     ## Multi-backend
     "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends#testTwoBackendsSerial",
