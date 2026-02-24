@@ -1,4 +1,4 @@
-name: Deploy to Maven Central
+name: Deploy to Maven Central [JDK21]
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'v*'
       - '[0-9]+.[0-9]+.[0-9]+*'
   workflow_run:
-    workflows: ["Finalize TornadoVM Release"]
+    workflows: ["2-Finalize TornadoVM Release [JDK21]"]
     types: [completed]
   workflow_dispatch:
     inputs:
