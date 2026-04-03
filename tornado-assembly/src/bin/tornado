@@ -430,5 +430,11 @@ if [ ! -f "$TORNADO_LAUNCHER" ]; then
     exit 1
 fi
 
+# Suppress JVMCI config compatibility check. Newer GraalVM JDK 21 builds
+# (e.g. 21.0.10) removed UseHeavyMonitors from the VM config, which causes a
+# hard error in the bundled Graal JARs.  Setting this to "ignore" lets TornadoVM
+# run correctly on those JDK versions.
+export JVMCI_CONFIG_CHECK=ignore
+
 # Execute the Python launcher with all arguments
 exec python3 "$TORNADO_LAUNCHER" "$@"
