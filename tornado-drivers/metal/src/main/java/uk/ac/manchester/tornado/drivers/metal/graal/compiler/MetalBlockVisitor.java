@@ -428,7 +428,7 @@ public class MetalBlockVisitor implements ControlFlowGraph.RecursiveVisitor<HIRB
      * no loop-body content remains to be generated.
      */
     private boolean allLoopBlocksEmitted(HIRBlock loopHeaderBlock) {
-        Loop<HIRBlock> loop = loopHeaderBlock.getLoop();
+        CFGLoop<HIRBlock> loop = loopHeaderBlock.getLoop();
         if (loop == null) {
             return false;
         }
