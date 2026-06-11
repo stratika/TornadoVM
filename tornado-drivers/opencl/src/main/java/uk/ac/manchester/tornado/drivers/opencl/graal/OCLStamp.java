@@ -127,7 +127,14 @@ public class OCLStamp extends ObjectStamp {
             return true;
         }
 
-        unimplemented("stamp iscompat: %s + %s", this, stamp);
+        // An OCLStamp of a vector kind is compatible with an ObjectStamp of the corresponding
+        // TornadoVM vector type (e.g., FLOAT4 vs Float4). Newer Graal versions (JDK 25) query
+        // stamp compatibility in FixReadsPhase before removing Pi nodes, so this must answer
+        // instead of bailing out.
+        if (stamp instanceof ObjectStamp objectStamp && objectStamp.type() != null) {
+            return OCLKind.fromResolvedJavaType(objectStamp.type()) == oclKind;
+        }
+
         return false;
     }
 
