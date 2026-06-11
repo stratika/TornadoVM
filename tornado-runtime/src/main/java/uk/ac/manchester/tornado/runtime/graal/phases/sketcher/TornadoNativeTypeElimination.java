@@ -28,6 +28,7 @@ import jdk.graal.compiler.nodes.GraphState;
 import jdk.graal.compiler.nodes.ParameterNode;
 import jdk.graal.compiler.nodes.PiNode;
 import jdk.graal.compiler.nodes.StructuredGraph;
+import jdk.graal.compiler.nodes.ValueNode;
 import jdk.graal.compiler.nodes.calc.IsNullNode;
 import jdk.graal.compiler.nodes.calc.PointerEqualsNode;
 import jdk.graal.compiler.nodes.extended.JavaReadNode;
@@ -205,22 +206,33 @@ public class TornadoNativeTypeElimination extends BasePhase<TornadoSketchTierCon
                     }
                 }
 
-                for (PiNode piNode : loadFieldSegment.inputs().filter(PiNode.class)) {
-                    for (OffsetAddressNode offsetAddressNode : loadFieldSegment.usages().filter(OffsetAddressNode.class)) {
-                        offsetAddressNode.replaceFirstInput(loadFieldSegment, piNode);
-                    }
+                // The object input of the segment load is the array reference itself: a PiNode when this
+                // load was inlined into a caller, or a raw ParameterNode when the method is sketched as a
+                // standalone (non-inlined) compilation unit. Rewire usages to it in both cases.
+                ValueNode arrayReference = loadFieldSegment.object();
+                for (OffsetAddressNode offsetAddressNode : loadFieldSegment.usages().filter(OffsetAddressNode.class).snapshot()) {
+                    offsetAddressNode.replaceFirstInput(loadFieldSegment, arrayReference);
+                }
 
-                    for (PiNode piNodeInner : loadFieldSegment.usages().filter(PiNode.class)) {
-                        for (OffsetAddressNode offsetAddressNode : piNodeInner.usages().filter(OffsetAddressNode.class).snapshot()) {
-                            offsetAddressNode.replaceFirstInput(piNodeInner, piNode);
-                        }
-                        piNodeInner.inputs().filter(FixedGuardNode.class).forEach(fixedGuardNode -> {
-                            fixedGuardNode.inputs().filter(IsNullNode.class).forEach(isNullNode -> {
-                                isNullNode.safeDelete();
-                            });
-                            deleteFixed(fixedGuardNode);
+                for (PiNode piNodeInner : loadFieldSegment.usages().filter(PiNode.class).snapshot()) {
+                    for (OffsetAddressNode offsetAddressNode : piNodeInner.usages().filter(OffsetAddressNode.class).snapshot()) {
+                        offsetAddressNode.replaceFirstInput(piNodeInner, arrayReference);
+                    }
+                    piNodeInner.inputs().filter(FixedGuardNode.class).forEach(fixedGuardNode -> {
+                        fixedGuardNode.inputs().filter(IsNullNode.class).forEach(isNullNode -> {
+                            isNullNode.safeDelete();
                         });
-                        piNodeInner.safeDelete();
+                        deleteFixed(fixedGuardNode);
+                    });
+                    if (piNodeInner.hasUsages()) {
+                        piNodeInner.replaceAtUsages(arrayReference);
+                    }
+                    piNodeInner.safeDelete();
+                }
+
+                for (IsNullNode isNullNode : loadFieldSegment.usages().filter(IsNullNode.class).snapshot()) {
+                    if (isNullNode.hasNoUsages()) {
+                        isNullNode.safeDelete();
                     }
                 }
 
