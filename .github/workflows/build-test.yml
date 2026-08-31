@@ -21,6 +21,11 @@ name: Build & Test
 #   + ci-full-jdk-sweep     label on the PR -> every JDK, for the run before you merge
 #   schedule (nightly)      every JDK
 #   workflow_dispatch       every JDK unless full_jdk_sweep is set to false
+#
+#   Windows is the exception to all of the above: the self-hosted Windows runner is only
+#   confirmed to have jdk21 and jdk25 installed (see build-release-sdks.yml), so it is not a
+#   sweep at all -- each built SDK is tested only against the JDK it was built with
+#   (jdk21 -> jdk21, jdk22plus -> jdk25), regardless of event type or ci-full-jdk-sweep.
 on:
   pull_request:
     branches: [develop]
@@ -77,6 +82,8 @@ jobs:
       test_linux: ${{ steps.matrices.outputs.test_linux }}
       build_macos: ${{ steps.matrices.outputs.build_macos }}
       test_macos: ${{ steps.matrices.outputs.test_macos }}
+      build_windows: ${{ steps.matrices.outputs.build_windows }}
+      test_windows: ${{ steps.matrices.outputs.test_windows }}
     steps:
       - id: matrices
         env:
@@ -103,11 +110,18 @@ jobs:
           # OpenCL and Metal need no pin -- they link the stable libOpenCL.so.1 ICD soname --
           # though it does mean an OpenCL leg may land on either Linux box, so its pass counts
           # vary with the GPU it happens to get.
+          # Windows needs no pin either, for a simpler reason than OpenCL/Metal above: there is
+          # only one self-hosted Windows runner today, so both its backends land there regardless
+          # and one-job-per-runner already serialises them. Metal has no Windows equivalent, so
+          # Windows only ever builds opencl+cuda (see docs/source/developer-guidelines.rst's
+          # platform table and build-release-sdks.yml's build-windows job).
           targets = [
               ("linux", "opencl", ["self-hosted", "Linux", "x64"]),
               ("linux", "cuda",   ["self-hosted", "Linux", "x64", "sdk-builder"]),
               ("macos", "opencl", ["self-hosted", "macOS", "arm64"]),
               ("macos", "metal",  ["self-hosted", "macOS", "arm64"]),
+              ("windows", "opencl", ["self-hosted", "Windows", "x64"]),
+              ("windows", "cuda",   ["self-hosted", "Windows", "x64"]),
           ]
           # The full sweep is opt-in or scheduled, never automatic: a manual dispatch decides for
           # itself, the nightly always takes it, and a pull request can ask for it by carrying the
@@ -140,8 +154,8 @@ jobs:
                                else ["jdk25", "jdk27"]
 
           # Emitted per platform so each one's tests can start behind its own builds only.
-          build = {"linux": [], "macos": []}
-          test = {"linux": [], "macos": []}
+          build = {"linux": [], "macos": [], "windows": []}
+          test = {"linux": [], "macos": [], "windows": []}
           for platform, backend, runner in targets:
               for sdk in ("jdk21", "jdk22plus"):
                   build[platform].append(dict(platform=platform, backend=backend,
@@ -149,11 +163,16 @@ jobs:
               # jdk21 SDK: preview-compiled, so JDK 21 and nothing else.
               test[platform].append(dict(platform=platform, backend=backend, runner=runner,
                                          sdk="jdk21", jdk="jdk21"))
-              for jdk in jdk22plus_runtimes:
+              # Windows ignores the sweep/subset logic above entirely: the runner only has
+              # jdk21 and jdk25 installed (see the comment near the top of this file), so the
+              # jdk22plus SDK is tested on jdk25 alone -- a fixed pairing, not a sweep.
+              platform_jdk22plus_runtimes = ["jdk25"] if platform == "windows" \
+                                             else jdk22plus_runtimes
+              for jdk in platform_jdk22plus_runtimes:
                   test[platform].append(dict(platform=platform, backend=backend, runner=runner,
                                              sdk="jdk22plus", jdk=jdk))
 
-          for platform in ("linux", "macos"):
+          for platform in ("linux", "macos", "windows"):
               print(f"build_{platform}=" + json.dumps({"include": build[platform]}))
               print(f"test_{platform}=" + json.dumps({"include": test[platform]}))
           EOF
@@ -180,3 +199,15 @@ jobs:
       platform: macos
       build_matrix: ${{ needs.plan.outputs.build_macos }}
       test_matrix: ${{ needs.plan.outputs.test_macos }}
+
+  # Separate reusable workflow rather than a third leg of build-test-platform.yml: that file is
+  # bash end-to-end, while Windows needs cmd/powershell, VsDevCmd.bat, nmake and PyInstaller-
+  # frozen .exe wrappers instead of shell scripts. See build-test-platform-windows.yml.
+  windows:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    needs: [code-quality, plan]
+    uses: ./.github/workflows/build-test-platform-windows.yml
+    with:
+      platform: windows
+      build_matrix: ${{ needs.plan.outputs.build_windows }}
+      test_matrix: ${{ needs.plan.outputs.test_windows }}
