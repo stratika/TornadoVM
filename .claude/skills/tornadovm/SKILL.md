@@ -11,6 +11,7 @@ TornadoVM JIT-compiles Java bytecode to GPU code (OpenCL C, CUDA/NVRTC, Apple Me
 
 For backend internals (where codegen lives, how to add a node/intrinsic), see `references/codegen-map.md`.
 For profiling and optimisation work on the runtime, see the `tornadovm-perf-campaign` skill.
+For porting application code to TornadoVM (writing and verifying kernels), see the `tornadovm-port` skill.
 
 ## Build
 
