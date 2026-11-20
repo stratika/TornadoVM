@@ -25,6 +25,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
@@ -32,12 +33,15 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLPlatformInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLPlatform implements TornadoPlatformInterface {
 
     private final int index;
     private final long oclPlatformPtr;
     private final List<OCLTargetDevice> devices;
+    /** Every context {@link #createContext} made, so {@link #cleanup} can release them. */
+    private final List<OCLContext> contexts = new CopyOnWriteArrayList<>();
 
     private enum Vendor {
         CODEPLAY("Codeplay"), //
@@ -161,13 +165,25 @@ public class OCLPlatform implements TornadoPlatformInterface {
         try {
             long contextPtr = clCreateContext(oclPlatformPtr, deviceIds.array());
             contextObject = new OCLContext(this, contextPtr, devices);
+            contexts.add(contextObject);
         } catch (OCLException e) {
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return contextObject;
     }
 
+    /**
+     * Cleans up every context this platform created. The driver's shutdown hook calls this; a
+     * context that fails to clean up does not stop the others, and a second call does nothing.
+     */
     public void cleanup() {
+        for (OCLContext context : contexts) {
+            try {
+                context.cleanup();
+            } catch (RuntimeException e) {
+                new TornadoLogger(getClass()).error("context cleanup failed: %s", e.getMessage());
+            }
+        }
     }
 
     public String getProfile() {
