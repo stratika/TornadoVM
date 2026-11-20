@@ -24,12 +24,14 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAPlatformInfo;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDAHandles;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 public class CUDAPlatform implements TornadoPlatformInterface {
@@ -37,6 +39,8 @@ public class CUDAPlatform implements TornadoPlatformInterface {
     private final int index;
     private final long oclPlatformPtr;
     private final List<CUDATargetDevice> devices;
+    /** Every context {@link #createContext} made, so {@link #cleanup} can release them. */
+    private final List<CUDAContext> contexts = new CopyOnWriteArrayList<>();
 
     private enum Vendor {
         CODEPLAY("Codeplay"), //
@@ -177,10 +181,23 @@ public class CUDAPlatform implements TornadoPlatformInterface {
     }
 
     public CUDAContext createContext() {
-        return new CUDAContext(this, devices);
+        CUDAContext context = new CUDAContext(this, devices);
+        contexts.add(context);
+        return context;
     }
 
+    /**
+     * Cleans up every context this platform created. The driver's shutdown hook calls this; a
+     * context that fails to clean up does not stop the others, and a second call does nothing.
+     */
     public void cleanup() {
+        for (CUDAContext context : contexts) {
+            try {
+                context.cleanup();
+            } catch (RuntimeException e) {
+                new TornadoLogger(getClass()).error("context cleanup failed: %s", e.getMessage());
+            }
+        }
     }
 
     public String getProfile() {

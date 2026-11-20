@@ -378,19 +378,27 @@ public class HIPContext implements HIPContextInterface {
      * next collective. The unpinning thread may wait as long as it takes.
      */
     public void unregisterPinnedMemoryLater(long hostPointer, Runnable done) {
-        unpinner.execute(() -> {
-            try {
-                hipHostUnregister(hostPointer);
-            } finally {
-                done.run();
-            }
-        });
+        try {
+            unpinner.execute(() -> {
+                try {
+                    hipHostUnregister(hostPointer);
+                } finally {
+                    done.run();
+                }
+            });
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            // {@link #cleanup} has run: the VM is exiting, and the memory goes with the process
+            logger.debug("host memory 0x%x left registered: the context is cleaned up", hostPointer);
+        }
     }
 
     /** Pinned host buffers of freed kernel stack frames, kept for the next frame; all of {@link #pinnedFrameBytes}. */
     private final java.util.ArrayDeque<Long> pinnedFrames = new java.util.ArrayDeque<>();
 
     private long pinnedFrameBytes;
+
+    /** Set by the first {@link #cleanup}; the driver's shutdown hook and a caller may both run it. */
+    private final java.util.concurrent.atomic.AtomicBoolean cleanedUp = new java.util.concurrent.atomic.AtomicBoolean();
 
     /**
      * A pinned host buffer of {@code bytes} for a kernel stack frame: one a freed frame left behind,
@@ -520,6 +528,18 @@ public class HIPContext implements HIPContextInterface {
     }
 
     public void cleanup() {
+        if (!cleanedUp.compareAndSet(false, true)) {
+            return;
+        }
+        // Pooled frames are unregistered on the unpinning thread too: unregistering synchronises every
+        // device, which in a shutdown hook can wait forever on a collective that another rank will not
+        // join. The bounded wait below keeps the hook from hanging; the process reclaims what is left.
+        synchronized (pinnedFrames) {
+            for (long hostPointer : pinnedFrames) {
+                unregisterPinnedMemoryLater(hostPointer, () -> freeOffHeapMemory(hostPointer));
+            }
+            pinnedFrames.clear();
+        }
         unpinner.shutdown();
         try {
             if (!unpinner.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
@@ -527,16 +547,6 @@ public class HIPContext implements HIPContextInterface {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        }
-        synchronized (pinnedFrames) {
-            // pooled frames exist only once a context did
-            if (!pinnedFrames.isEmpty()) {
-                for (long hostPointer : pinnedFrames) {
-                    hipHostUnregister(hostPointer);
-                    freeOffHeapMemory(hostPointer);
-                }
-            }
-            pinnedFrames.clear();
         }
 
         if (TornadoOptions.DUMP_EVENTS) {
