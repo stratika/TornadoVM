@@ -24,12 +24,14 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import uk.ac.manchester.tornado.drivers.hip.enums.HIPDeviceType;
 import uk.ac.manchester.tornado.drivers.hip.enums.HIPPlatformInfo;
 import uk.ac.manchester.tornado.drivers.hip.exceptions.HIPException;
 import uk.ac.manchester.tornado.drivers.hip.ffm.HIPDriverAPI;
 import uk.ac.manchester.tornado.drivers.hip.ffm.HIPHandles;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 public class HIPPlatform implements TornadoPlatformInterface {
@@ -37,6 +39,8 @@ public class HIPPlatform implements TornadoPlatformInterface {
     private final int index;
     private final long oclPlatformPtr;
     private final List<HIPTargetDevice> devices;
+    /** Every context {@link #createContext} made, so {@link #cleanup} can release them. */
+    private final List<HIPContext> contexts = new CopyOnWriteArrayList<>();
 
     private enum Vendor {
         CODEPLAY("Codeplay"), //
@@ -176,10 +180,23 @@ public class HIPPlatform implements TornadoPlatformInterface {
     }
 
     public HIPContext createContext() {
-        return new HIPContext(this, devices);
+        HIPContext context = new HIPContext(this, devices);
+        contexts.add(context);
+        return context;
     }
 
+    /**
+     * Cleans up every context this platform created. The driver's shutdown hook calls this; a
+     * context that fails to clean up does not stop the others, and a second call does nothing.
+     */
     public void cleanup() {
+        for (HIPContext context : contexts) {
+            try {
+                context.cleanup();
+            } catch (RuntimeException e) {
+                new TornadoLogger(getClass()).error("context cleanup failed: %s", e.getMessage());
+            }
+        }
     }
 
     public String getProfile() {
