@@ -47,6 +47,9 @@ public class OCLContext implements OCLContextInterface {
     private final List<OCLTargetDevice> devices;
     private final List<OCLDeviceContext> deviceContexts;
 
+    /** Set by the first {@link #cleanup}; the driver's shutdown hook and a caller may both run it. */
+    private final java.util.concurrent.atomic.AtomicBoolean cleanedUp = new java.util.concurrent.atomic.AtomicBoolean();
+
     private final OCLPlatform platform;
 
     private final TornadoLogger logger;
@@ -287,6 +290,9 @@ public class OCLContext implements OCLContextInterface {
     }
 
     public void cleanup() {
+        if (!cleanedUp.compareAndSet(false, true)) {
+            return;
+        }
 
         if (TornadoOptions.DUMP_EVENTS) {
             for (OCLDeviceContext deviceContext : deviceContexts) {

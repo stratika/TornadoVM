@@ -23,18 +23,22 @@ package uk.ac.manchester.tornado.drivers.metal;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalPlatformInfo;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class MetalPlatform implements TornadoPlatformInterface {
 
     private final int index;
     private final long metalPlatformPtr;
     private final List<MetalTargetDevice> devices;
+    /** Every context {@link #createContext} made, so {@link #cleanup} can release them. */
+    private final List<MetalContext> contexts = new CopyOnWriteArrayList<>();
 
     private enum Vendor {
         CODEPLAY("Codeplay"), //
@@ -110,13 +114,25 @@ public class MetalPlatform implements TornadoPlatformInterface {
         try {
             long contextPtr = metalCreateContext(metalPlatformPtr, deviceIds.array());
             contextObject = new MetalContext(this, contextPtr, devices);
+            contexts.add(contextObject);
         } catch (MetalException e) {
             throw new TornadoBailoutRuntimeException(e.getMessage());
         }
         return contextObject;
     }
 
+    /**
+     * Cleans up every context this platform created. The driver's shutdown hook calls this; a
+     * context that fails to clean up does not stop the others, and a second call does nothing.
+     */
     public void cleanup() {
+        for (MetalContext context : contexts) {
+            try {
+                context.cleanup();
+            } catch (RuntimeException e) {
+                new TornadoLogger(getClass()).error("context cleanup failed: %s", e.getMessage());
+            }
+        }
     }
 
     public String getProfile() {

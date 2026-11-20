@@ -39,6 +39,9 @@ public class MetalContext implements MetalContextInterface {
     private final List<MetalTargetDevice> devices;
     private final List<MetalDeviceContext> deviceContexts;
 
+    /** Set by the first {@link #cleanup}; the driver's shutdown hook and a caller may both run it. */
+    private final java.util.concurrent.atomic.AtomicBoolean cleanedUp = new java.util.concurrent.atomic.AtomicBoolean();
+
     private final MetalPlatform platform;
 
     private final TornadoLogger logger;
@@ -200,6 +203,9 @@ public class MetalContext implements MetalContextInterface {
     }
 
     public void cleanup() {
+        if (!cleanedUp.compareAndSet(false, true)) {
+            return;
+        }
 
         if (TornadoOptions.DUMP_EVENTS) {
             for (MetalDeviceContext deviceContext : deviceContexts) {
